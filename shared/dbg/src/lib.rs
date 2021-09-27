@@ -1,5 +1,3 @@
-use super::*;
-
 mod address;
 pub use address::*;
 mod breakpoint;
@@ -10,6 +8,8 @@ mod ptrace;
 pub use ptrace::*;
 mod registers;
 pub use registers::*;
+
+use elf::ELF;
 
 const SEPARATOR: &str = concat!(
     "----------------------------------------",

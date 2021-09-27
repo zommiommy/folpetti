@@ -1,2 +1,2 @@
-# folpetti
-My mono-repo for every binary / low level code.
+# 🐙🦀 folpetti 
+My mono-repo for binary / low level code.

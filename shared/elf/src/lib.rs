@@ -16,9 +16,13 @@
 //! elf.write_file("modified");
 //! ```
 //! For more examples see the usage in the strip program / the debugger
-#![no_std]
 
-use std::convert::TryInto;
+use core::convert::TryInto;
+
+mod errors;
+pub use errors::*;
+
+#[macro_use] mod utils;
 
 mod elf;
 pub use elf::ELF;

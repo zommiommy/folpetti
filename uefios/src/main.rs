@@ -3,12 +3,13 @@
 #![no_main]
 
 #[macro_use] mod print;
-mod core_requirements;
-mod efi;
-use core::panic::PanicInfo;
-use efi::*;
 
-use core::arch::x86_64::_rdtsc;
+// Import the core requirements routines for the compiler
+#[allow(unused_imports)]
+use core_requirements;
+
+use efi::*;
+use core::panic::PanicInfo;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -24,7 +25,6 @@ fn panic(info: &PanicInfo) -> ! {
 
     loop {
         unsafe{ asm!("hlt");}
-        //unsafe{ core::ptr::write_volatile(!0x0 as _, 0x42069)};
     }
 }
 
@@ -41,6 +41,8 @@ fn enable_performance_counters() {
 }
 
 fn read_performance_counter() {
+    // TODO add selector for performance counter
+    // and figure out how to configure them
     unsafe{
         asm!(
             "rdpmc "
@@ -56,19 +58,21 @@ extern fn efi_main(_image_handle: EfiHandle, system_table: *mut EfiSystemTable) 
         efi::register_system_table(system_table);
     }    
     
-    let start = unsafe{_rdtsc()};
+    let start = unsafe{core::arch::x86_64::_rdtsc()};
 
     st.get_acpi_table();
 
     st.get_memory_map();
 
-    let end = unsafe{_rdtsc()};
+    let end = unsafe{core::arch::x86_64::_rdtsc()};
 
     print!("It took {}\n", end - start);
 
     print!("{:#4?}\n", unsafe{&*system_table});
 
     enable_performance_counters();
+    
+    read_performance_counter();
 
     panic!("CULO");
 }
