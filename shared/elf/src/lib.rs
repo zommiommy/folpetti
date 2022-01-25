@@ -19,6 +19,9 @@
 
 use core::convert::TryInto;
 
+#[macro_use] mod data;
+pub use data::*;
+
 mod errors;
 pub use errors::*;
 

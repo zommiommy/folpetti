@@ -5,8 +5,8 @@ use super::*;
 pub struct EfiConfigurationTable {
     /// The 128-bit GUID value that uniquely identifies the system
     /// configurationt able.
-    pub guid: EfiGuid,
+    pub vendor_guid: EfiGuid,
 
     /// A pointer to the table associated with `guid`
-    pub table: usize,
+    pub vendor_table: usize,
 }

@@ -76,63 +76,77 @@ pub struct EfiSystemTable {
     pub tables: *const EfiConfigurationTable,
 }
 
+/// Save to the side the retrieved memory map
+static mut MEMORY_MAP: MemoryMap = MemoryMap::default();
+
+
+#[derive(Debug)]
+pub struct MemoryMap {
+    size: usize,
+    mdesc_size: usize,
+    mdesc_version: u32,
+    data: [u8; 16 * 1024],
+}
+
+impl MemoryMap {
+    const fn default() -> Self {
+        MemoryMap{
+            size: 0,
+            mdesc_size: 0,
+            mdesc_version: 0,
+            data: [0; 16*1024],
+        }
+    }
+
+    /// Get the number of MemoryDescriptors in the MemoryMap
+    pub fn len(&self) -> usize {
+        self.size / self.mdesc_size
+    }
+
+    pub fn get_table(&self, index: usize) -> Result<MemoryDescriptor, &str> {
+        if index >= self.len() {
+            return Err("The given index in the memory map is too big");
+        }
+
+        Ok(unsafe {
+            MemoryDescriptor::from(*(
+                self.data.as_ptr().add(self.mdesc_size * index) 
+                as *const EfiMemoryDescriptor
+            ))
+        })
+    }
+}
+
 impl EfiSystemTable {
-    pub fn get_acpi_table(&self) {
-        // TODO!
-        let _tables = unsafe {
+    pub fn get_efi_tables(&self) -> &[EfiConfigurationTable] {
+        unsafe {
             core::slice::from_raw_parts(
             self.tables, 
             self.number_of_tables
             )
-        };
-
-        //print!("{:#4x?}\n", tables);
+        }
     }
 
     /// Get the memory map for the system from UEFI
-    pub fn get_memory_map(&self) -> u64 {
-        // TODO!
-
-        // Create an empty memory map
-        let mut memory_map = [0_u8; 16 * 1024];
-
-        let mut free_memory = 0_u64;
+    pub fn get_memory_map(&self) -> &MemoryMap {
         unsafe {
-            let mut size = core::mem::size_of_val(&memory_map);
+            MEMORY_MAP.size = core::mem::size_of_val(&MEMORY_MAP.data);
             let mut key = 0;
-            let mut mdesc_size = 0;
-            let mut mdesc_version = 0;
 
             let ret = ((*self.boot_services).get_memory_map)(
-                &mut size,
-                memory_map.as_mut_ptr(),
+                &mut MEMORY_MAP.size,
+                MEMORY_MAP.data.as_mut_ptr(),
                 &mut key,
-                &mut mdesc_size,
-                &mut mdesc_version
+                &mut MEMORY_MAP.mdesc_size,
+                &mut MEMORY_MAP.mdesc_version
             );
 
-            assert!(ret == EfiStatus::EfiSuccess, "Error {:x?} while getting the memory map", ret);
+            assert!(
+                ret == EfiStatus::EfiSuccess, 
+                "Error {:x?} while getting the memory map", ret
+            );
 
-            for off in (0..size).step_by(mdesc_size) {
-                let entry = core::ptr::read_unaligned(
-                    memory_map[off..].as_ptr() as *const EfiMemoryDescriptor
-                );
-
-                let typ: EfiMemoryType = entry.typ.into();
-
-                if typ.avail_post_exit_boot_services() {
-                    free_memory += entry.number_of_pages * 4096;
-                }
-
-                //print!("{:016x} {:016x} {:?}\n",
-                //     entry.physical_start,
-                //     entry.number_of_pages * 4096,
-                //     typ
-                // );
-            }
+            &MEMORY_MAP
         }
-
-        //print!("Total bytes free {}\n", free_memory);
-        free_memory
     }
 }

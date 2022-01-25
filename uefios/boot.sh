@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+# yay -S edk2-ovmf
 qemu-system-x86_64 \
     -enable-kvm \
     -m 128 \

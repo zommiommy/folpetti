@@ -59,10 +59,28 @@ extern fn efi_main(_image_handle: EfiHandle, system_table: *mut EfiSystemTable) 
     }    
     
     let start = unsafe{core::arch::x86_64::_rdtsc()};
+    
+    let memory_map = st.get_memory_map();
 
-    st.get_acpi_table();
+    print!("Memory Map\n");
+    print!("Phys Virt #pages\n");
+    for i in 0..memory_map.len() {
+        let table = memory_map.get_table(i).unwrap();
+        if !table.typ.avail_post_exit_boot_services() {
+            print!(
+                "{:08x} {:08x} {:08x} {:?} {:?}\n", 
+                table.physical_start,
+                table.virtual_start,
+                table.number_of_pages,
+                table.attribute,
+                table.typ,
+            );
+        }
+    }
 
-    st.get_memory_map();
+    let tables = st.get_efi_tables();
+
+    //print!("{:#4?}", tables);
 
     let end = unsafe{core::arch::x86_64::_rdtsc()};
 

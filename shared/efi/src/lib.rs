@@ -1,5 +1,7 @@
 #![no_std]
 
+#[macro_use] mod utils;
+
 mod efi_boot_services;
 pub use efi_boot_services::*;
 
