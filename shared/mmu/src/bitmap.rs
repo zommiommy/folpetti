@@ -4,6 +4,7 @@ use alloc::vec::Vec;
 #[repr(transparent)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 /// A simple bitmap
+/// 
 pub struct Bitmap(Vec<usize>);
 
 /// How many bits there are in a word of memory
@@ -14,9 +15,9 @@ impl Bitmap {
     /// number of bits in a word of memory (usize).
     /// This is needed to have tight and correct bound checking on the values
     /// without the overhead of **also** checking the len.
-    pub fn new(size: usize) -> Result<Self, ()> {
+    pub fn new(size: usize) -> Result<Self, usize> {
         if size % BITS_IN_WORD != 0 {
-            return Err(());
+            return Err(size);
         } 
         Ok(Bitmap(vec![0; size / BITS_IN_WORD]))
     }

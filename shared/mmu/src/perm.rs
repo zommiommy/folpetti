@@ -4,6 +4,8 @@ use core::ops::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 /// Enum of the bit-fields in a Perm u8
 pub enum PermField {
+    /// No permissions, this is tecnically not a PermField but it's usefull
+    None           = 0,
     /// If the current byte can be read
     Read           = 1 << 0,
     /// If the current byte can be written
@@ -12,8 +14,24 @@ pub enum PermField {
     Executable     = 1 << 2,
     /// If the current byte can be **Read only After it was Written to**
     ReadAfterWrite = 1 << 3,
-    /// Access bit, register if a bit is read. This is used to do taint tracking
-    Accessed       = 1 << 4,
+    /// If the current byte has to be tainted, as in if we will add the 
+    /// [`PermField::Tainted`] permission field when a read or write occurs 
+    /// for that byte. I deviate from Gamozo's design to mitigate the additional
+    /// dirting of blocks caused by the access bit. In this case we can 
+    /// surgically select the bits to tracks. This should be sensible because
+    /// the main goal of taint analysis is to track which byts of the inputs
+    /// are read, these bits will be dirtied anyway so it shouldn't be a
+    /// big overhead.
+    ToTaint        = 1 << 4,
+    /// If the value had [`PermField::ToTaint`] and was accessed by a read or
+    /// write
+    Tainted        = 1 << 5,
+}
+
+impl PermField {
+    pub const fn const_into_u8(self) -> u8 {
+        self as u8
+    }
 }
 
 // Convertion utilities
@@ -51,8 +69,11 @@ impl TryFrom<u8> for PermField {
             _ if value == (PermField::ReadAfterWrite as u8) => {
                 Ok(PermField::ReadAfterWrite)
             }
-            _ if value == (PermField::Accessed as u8) => {
-                Ok(PermField::Accessed)
+            _ if value == (PermField::ToTaint as u8) => {
+                Ok(PermField::ToTaint)
+            }
+            _ if value == (PermField::Tainted as u8) => {
+                Ok(PermField::Tainted)
             }
             x @ _ => {
                 Err(x)
@@ -61,20 +82,52 @@ impl TryFrom<u8> for PermField {
     }
 }
 
-
 /// A permissions byte which corresponds to a memory byte and defines the
 /// permissions it has. This is a fancy way to have an u8 bitmap for the 
 /// various permissions but it's less prone to bugs thanks to rust pedantic
 /// compiler.
 #[repr(transparent)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Perm(u8);
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Perm(pub u8);
+
+/// Impl Debug, the impl is a bit ugly but it doens't need any allocation which
+/// is nice
+impl core::fmt::Debug for Perm {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if self.0 == 0 {
+            return f.write_str("None");
+        }
+        let mut is_first = true;
+
+        let perms = [
+            PermField::Read,
+            PermField::Write,
+            PermField::Executable,
+            PermField::ReadAfterWrite,
+            PermField::Tainted,
+            PermField::ToTaint,
+        ];
+
+        for perm in perms {
+            if self.is_superset_of(perm) {
+                if is_first {
+                    is_first = false;
+                } else {
+                    f.write_str(" | ")?;
+                }
+                f.write_fmt(format_args!("{:?}", perm))?;
+            }
+        }
+        
+        Ok(())
+    }
+}
 
 /// By default No permissions
 impl Default for Perm {
     #[inline(always)]
     fn default() -> Self {
-        Perm(0)
+        PermField::None.into()
     }
 }
 
@@ -84,10 +137,20 @@ impl From<Perm> for u8 {
     }
 }
 
+impl From<PermField> for Perm {
+    fn from(value: PermField) -> Self {
+        Perm(value.into())
+    }
+}
+
 impl Perm {
     pub fn is_superset_of<P: Into<u8>>(&self, other: P) -> bool {
         let other = other.into();
         (self.0 & other) == other
+    }
+
+    pub const fn const_into_u8(self) -> u8 {
+        self.0
     }
 }
 

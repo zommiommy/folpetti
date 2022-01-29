@@ -21,17 +21,73 @@ use alloc::collections::BTreeMap;
 use core::intrinsics::unlikely;
 use core::ops::Range;
 
+mod virtaddr;
+pub use virtaddr::*;
 mod bitmap;
 pub use bitmap::*;
 mod dirty;
 pub use dirty::*;
 mod perm;
 pub use perm::*;
+mod mmu_read_write_impls;
+pub use mmu_read_write_impls::*;
 
-#[repr(transparent)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-/// A strongly typed address **relative to the start of the current segment**
-pub struct VirtAddr(usize);
+
+/// An error that can be raised by trying to read or write in the MMU.
+/// This tries to store all the relevant informations for debugging
+#[derive(Debug)]
+pub enum MmuError {
+    /// This error is raised if an initializzation write wants to write data
+    /// with [`PermField::ReadAfterWrite`]. While this is not an error, it's 
+    /// useless and means that we probably made an error some where, so I prefer
+    /// to have an early stop and figure it out rather than continue silently.
+    UselessReadAfterWrite,
+
+    /// This error is raised when the requested allocation memory is bigger than
+    /// the **initial** size of memory handable by this MMU
+    CannotAllocate {
+        virtual_address: VirtAddr,
+        mmu_length: usize,
+    },
+
+    /// To avoid possible bugs / out of bounds I choose to force the size of the
+    /// MMU to be a multiple of the dirty block size.
+    SizeIsNotMultipleOfDirtyBlockSize{
+        size: usize,
+        dirty_block_size: usize,
+    },
+
+    /// This error is raised when a free is called on something that wasn't an
+    /// allocation done by this MMU.
+    InvalidFree(VirtAddr),
+
+    /// This error is raised when trying to set permissions, the virtual address
+    /// range to set is out of bound
+    SetPermissionsOutOfBound{
+        end_address: VirtAddr,
+        /// Range to set
+        range: Range<VirtAddr>,
+    },
+
+    /// This error is raised when a Read or a Write access memory out of bound.
+    /// This could tecnically be a [`MmuError::PermissionFault`] with permissions
+    /// 0, but this is more specific and let us better understand where this
+    /// error araises.
+    OutOfBound {
+        /// If the operation that generated the error was a Read or a Write
+        is_read: bool,
+        virtual_address: VirtAddr,
+    },
+
+    PermissionsFault{
+        /// If the operation that generated the error was a Read or a Write
+        is_read: bool,
+        virtual_address: VirtAddr,
+        /// these are initialized only for the len of the type read
+        permissions: [Perm; 8],
+        size: usize,
+    },
+}
 
 /// An contiguous isolated memory space
 /// 
@@ -44,7 +100,14 @@ pub struct VirtAddr(usize);
 /// This is a generic const instead of just a const so that we can tune it for
 /// different sections, depending on theirs access pattern.
 #[derive(Debug, PartialEq, Eq)]
-pub struct Mmu<const DIRTY_BLOCK_SIZE: usize = 256> {
+pub struct Mmu<
+    // size of the dirty blocks
+    const DIRTY_BLOCK_SIZE: usize = 256,
+    // if we should check for Read After Wrtie
+    const RAW: bool = true,
+    // If we should track the signed bytes if they are read
+    const TAINT: bool = true,    
+> {
     /// BLock of memory for this address space
     /// Offset 0 corresponds to address 0 in the guest address space
     memory: Vec<u8>,
@@ -53,10 +116,7 @@ pub struct Mmu<const DIRTY_BLOCK_SIZE: usize = 256> {
     permissions: Vec<Perm>,
 
     /// Keep track of what was dirtied and what wasn't
-    dirty: DirtyState,
-
-    /// The base address of this Chunk of contiguos memory
-    base_address: VirtAddr,
+    pub dirty: DirtyState,
 
     /// The last valid virtual address in this memory, this value is increased
     /// with [`Mmu::allocate`].
@@ -70,18 +130,22 @@ pub struct Mmu<const DIRTY_BLOCK_SIZE: usize = 256> {
     /// have them so a BTreeMap is the next best thing. In the future I can just 
     /// implement a no_std hashmap but for now it's not a priority.
     allocations: BTreeMap<VirtAddr, usize>,
-
-    /// How much space we will leave between each allocation to amplify the 
-    /// detection of out of bounds writes and reads.
-    asan_dead_zones_size: usize,
 }
 
-impl<const DIRTY_BLOCK_SIZE: usize> Mmu<DIRTY_BLOCK_SIZE> {
+impl<
+    const DIRTY_BLOCK_SIZE: usize,
+    const RAW: bool,
+    const TAINT: bool,    
+> Mmu<
+    DIRTY_BLOCK_SIZE,
+    RAW,
+    TAINT,
+> {
 
     /// Return a new empty MMU that can contains at most `size` bytes.
     /// We have an additional requirement, `size` must be a multiple of 
     /// `DIRTY_BLOCK_SIZE` and `DIRTY_BLOCK_SIZE` must be a multiple of 64.
-    pub fn new(base_address: VirtAddr, size: usize, asan_dead_zones_size: usize) -> Result<Self, MmuError> {
+    pub fn new(size: usize) -> Result<Self, MmuError> {
         
         // Check that the dirty block size is reasonable. This should be a
         // static assert but in rust these are not awesome lol
@@ -100,17 +164,16 @@ impl<const DIRTY_BLOCK_SIZE: usize> Mmu<DIRTY_BLOCK_SIZE> {
         // This should always be cached by the above if, but debug asserts don't
         // cost anythig so I can just add them and sleep at night
         debug_assert!(size % DIRTY_BLOCK_SIZE == 0);
-        debug_assert_eq!(size, DIRTY_BLOCK_SIZE * (size % DIRTY_BLOCK_SIZE));
+        debug_assert_eq!(size, DIRTY_BLOCK_SIZE * (size / DIRTY_BLOCK_SIZE));
 
         Ok(Mmu {
             memory: vec![0; size],
             permissions: vec![Perm::default(); size],
             
-            base_address,
-            end_address:VirtAddr(0),
+            // init to a bit bigger size so that we catch null derefs
+            end_address:VirtAddr(0x1000),
 
             allocations: BTreeMap::new(),
-            asan_dead_zones_size,
 
             // Here we can unwrap because the above checks implies that 
             // `size % 64 == 0` which is a superset of the requirement.
@@ -128,10 +191,8 @@ impl<const DIRTY_BLOCK_SIZE: usize> Mmu<DIRTY_BLOCK_SIZE> {
             memory: self.memory.clone(), 
             permissions: self.permissions.clone(), 
 
-            base_address: self.base_address,
             end_address: self.end_address,
             allocations: self.allocations.clone(),
-            asan_dead_zones_size: self.asan_dead_zones_size,
 
             // The size is already checked on creation so this cannot fail
             dirty: unsafe{DirtyState::new(self.dirty.len()).unwrap_unchecked()},
@@ -139,7 +200,7 @@ impl<const DIRTY_BLOCK_SIZE: usize> Mmu<DIRTY_BLOCK_SIZE> {
     }
 
     /// Reset the memory to the state it was at creation. 
-    pub fn reset(&mut self, reference_memory: &Mmu<DIRTY_BLOCK_SIZE>) {
+    pub fn reset(&mut self, reference_memory: &Self) {
         // Clean the blocks and remove the indices from the vector
         for dirty_block_index in self.dirty.drain() {
             // Compute the range of bytes we need to reset
@@ -161,32 +222,42 @@ impl<const DIRTY_BLOCK_SIZE: usize> Mmu<DIRTY_BLOCK_SIZE> {
         self.allocations.extend(reference_memory.allocations.iter());
         
         // Reset the adress informations
-        self.base_address = reference_memory.base_address;
         self.end_address = reference_memory.end_address;
 
         // on debug check (**expensive**) that the reset is done correctly
-        debug_assert_eq!(self, reference_memory);
+        debug_assert_eq!(self.end_address, reference_memory.end_address);
+        debug_assert_eq!(self.permissions, reference_memory.permissions);
+        debug_assert_eq!(self.allocations, reference_memory.allocations);
+        debug_assert_eq!(self.memory, reference_memory.memory);
     }
 
     /// Allocate a new chunk of memory
     pub fn allocate(&mut self, size: usize)  -> Result<VirtAddr, MmuError> {
         // Add padding to be aligned and add a bit of memory
-        let mut align_size = (size + 0xf) & !0xf;
-
-        // add a little padding to have an ASAN-like dead zone between
-        // allocations to catch even small out of bounds
-        align_size += self.asan_dead_zones_size;
-
+        let aligned_size = (size + 0xf) & !0xf;
+        // compute the end address **after** the allocation
+        let base = self.end_address;
+        let new_end_addr = VirtAddr(self.end_address.0 + aligned_size);
         
-
-        if end > self.memory.len() {
-            return Err(CannotAllocate{
-                
+        // check that we are in bound
+        if new_end_addr > VirtAddr(self.memory.len()) {
+            return Err(MmuError::CannotAllocate{
+                virtual_address: self.end_address,
+                mmu_length: self.memory.len(),
             });
         }
 
-        self.set_permissions(base..(base + size), PermField::Write | PermField::ReadAfterWrite)?;
+        // update the value, this is used to bound check `set_permissions`
+        self.end_address = new_end_addr;
 
+        // Set the permissions soso that we can write into it
+        self.set_permissions(base..new_end_addr, 
+        if RAW {
+                PermField::Write | PermField::ReadAfterWrite
+            } else {
+                PermField::Write | PermField::Read
+            }
+        )?;
 
         Ok(base)
     }
@@ -197,7 +268,7 @@ impl<const DIRTY_BLOCK_SIZE: usize> Mmu<DIRTY_BLOCK_SIZE> {
             self.set_permissions(
                 addr..VirtAddr(addr.0+size), 
                 Perm::default()
-            );
+            ).unwrap(); // TODO!: check unwrap
             Ok(())
         } else {
             Err(MmuError::InvalidFree(addr))
@@ -216,25 +287,22 @@ impl<const DIRTY_BLOCK_SIZE: usize> Mmu<DIRTY_BLOCK_SIZE> {
         }
 
         // check that we are in bound
-        if range.start < self.base_address || range.end >= self.end_address {
+        if range.end > self.end_address {
             return Err(MmuError::SetPermissionsOutOfBound{
-                base_address: self.base_address,
                 end_address: self.end_address,
                 range,
             });
         }
 
         // compute the range of bytes to update
-        let start = range.start.0 - self.base_address.0;
-        let end = range.end.0 - self.base_address.0;
-        let range_to_modify = start..end; 
+        let range_to_modify = range.start.0..range.end.0; 
 
         // apply the permissions
         self.permissions[range_to_modify].fill(permissions);
 
         // compute the dirty range
-        let dirty_start = start / DIRTY_BLOCK_SIZE;
-        let dirty_end = end / DIRTY_BLOCK_SIZE;
+        let dirty_start = (range.start.0 + DIRTY_BLOCK_SIZE - 1) / DIRTY_BLOCK_SIZE;
+        let dirty_end   = (range.end.0   + DIRTY_BLOCK_SIZE - 1) / DIRTY_BLOCK_SIZE;
 
         // dirty the blocks
         for idx in dirty_start..dirty_end {
@@ -265,9 +333,7 @@ impl<const DIRTY_BLOCK_SIZE: usize> Mmu<DIRTY_BLOCK_SIZE> {
     /// could be caused by the missuse of this function. So it's "indirectly"
     /// unsafe. 
     pub unsafe fn write_from_slice(&mut self, address: VirtAddr, slice: &[u8], permission: Option<Perm>) -> Result<(), MmuError> {
-        if let Some(perm) = permission {
-
-        }
+        unimplemented!();
     }
 
     /// Return a reference to a chunk of virtual memory, after ensuring the 
@@ -278,162 +344,21 @@ impl<const DIRTY_BLOCK_SIZE: usize> Mmu<DIRTY_BLOCK_SIZE> {
         unimplemented!()
     }
 
-    // Read a value from memory at address `address` with little endianess
-    pub fn read_little<T>(&mut self, address: VirtAddr) -> Result<T, MmuError> 
-    where
-        T: Copy,
-    {
-        <Self as MmuReadWrite<T>>::read_inner_little(self, address)
-    }
-
-    // Read a value from memory at address `address` with big endianess
-    pub fn read_big<T>(&mut self, address: VirtAddr) -> Result<T, MmuError> 
-    where
-        T: Copy,
-    {
-        <Self as MmuReadWrite<T>>::read_inner_big(self, address)
-    }
-
-    // Write a value `value` to memory at address `address` with little endianess
-    pub fn write_little<T>(&mut self, address: VirtAddr, value: T) -> Result<(), MmuError> 
+    // Read a value from memory at address `address` with native endianess
+    pub fn read<T>(&mut self, address: VirtAddr) -> Result<T, MmuError> 
     where
         T: Copy,
         Self: MmuReadWrite<T>,
     {
-        <Self as MmuReadWrite<T>>::write_inner_little(self, address, value)
+        <Self as MmuReadWrite<T>>::read(self, address)
     }
 
-    // Write a value `value` to memory at address `address` with big endianess
-    pub fn write_big<T>(&mut self, address: VirtAddr, value: T) -> Result<(), MmuError> 
+    // Write a value `value` to memory at address `address` with native endianess
+    pub fn write<T>(&mut self, address: VirtAddr, value: T) -> Result<(), MmuError> 
     where
         T: Copy,
         Self: MmuReadWrite<T>,
     {
-        <Self as MmuReadWrite<T>>::write_inner_big(self, address, value)
-    }
-}
-
-/// An error that can be raised by trying to read or write in the MMU.
-/// This tries to store all the relevant informations for debugging
-pub enum MmuError {
-    /// This error is raised if an initializzation write wants to write data
-    /// with [`PermField::ReadAfterWrite`]. While this is not an error, it's 
-    /// useless and means that we probably made an error some where, so I prefer
-    /// to have an early stop and figure it out rather than continue silently.
-    UselessReadAfterWrite,
-
-    /// This error is raised when the requested allocation memory is bigger than
-    /// the **initial** size of memory handable by this MMU
-    CannotAllocate {
-        virtual_address: VirtAddr,
-        mmu_length: usize,
-    },
-
-    /// To avoid possible bugs / out of bounds I choose to force the size of the
-    /// MMU to be a multiple of the dirty block size.
-    SizeIsNotMultipleOfDirtyBlockSize{
-        size: usize,
-        dirty_block_size: usize,
-    },
-
-    /// This error is raised when a free is called on something that wasn't an
-    /// allocation done by this MMU.
-    InvalidFree(VirtAddr),
-
-    /// This error is raised when trying to set permissions, the virtual address
-    /// range to set is out of bound
-    SetPermissionsOutOfBound{
-        base_address: VirtAddr,
-        end_address: VirtAddr,
-        /// Range to set
-        range: Range<VirtAddr>,
-    },
-
-    /// This error is raised when a Read or a Write access memory out of bound.
-    /// This could tecnically be a [`MmuError::PermissionFault`] with permissions
-    /// 0, but this is more specific and let us better understand where this
-    /// error araises.
-    OutOfBound {
-        /// If the operation that generated the error was a Read or a Write
-        is_read: bool,
-        virtual_address: VirtAddr,
-        mmu_length: usize,
-    },
-
-    /// permissions and memory are valid only for `size` bytes, the rest will be
-    /// probably zero padded but for now it's not something relayable
-    PermissionsFault{
-        /// If the operation that generated the error was a Read or a Write
-        is_read: bool,
-        virtual_address: VirtAddr,
-        permissions: [Perm; 8],
-        memory: [u8; 8],
-        size: usize,
-    },
-}
-
-/// This traits allows us to separate the implementations of read and write
-/// for current and future types. This might be overwkill but allows for a 
-/// really easy time form an user prospective that can just to 
-/// `mmu.read::<u32>(0)` and everything figured out optimally at compile time
-trait MmuReadWrite<T>
-where
-    T: Copy,
-{
-    fn read_inner_little(&mut self, address: VirtAddr) -> Result<T, MmuError>;
-    fn write_inner_little(&mut self, address: VirtAddr, value: T) 
-        -> Result<(), MmuError>;
-    fn read_inner_big(&mut self, address: VirtAddr) -> Result<T, MmuError>;
-    fn write_inner_big(&mut self, address: VirtAddr, value: T) 
-        -> Result<(), MmuError>;
-}
-
-impl<const DIRTY_BLOCK_SIZE: usize> MmuReadWrite<u8> for Mmu<DIRTY_BLOCK_SIZE> {
-    fn read_inner_little(&mut self, address: VirtAddr) -> Result<u8, MmuError> {
-        unimplemented!()
-    }
-    fn read_inner_big(&mut self, address: VirtAddr) -> Result<u8, MmuError> {
-        unimplemented!()
-    }
-
-    fn write_inner_little(&mut self, address: VirtAddr, value: u8) -> Result<(), MmuError> {
-        // check if we can write on all the bytes needed
-        if unlikely(!self.permissions[address.0].is_superset_of(
-            PermField::Write | PermField::ReadAfterWrite
-        )) {
-            let size = core::mem::size_of::<u8>();
-
-            // Get the bytes from 
-            let mut permissions: [Perm; 8] = Default::default();
-            permissions.copy_from_slice(&self.permissions[address.0..self.permissions.len().min(address.0 + size)]);
-
-            let mut memory: [u8; 8] = Default::default();
-            memory.copy_from_slice(&self.memory[address.0..address.0 + size]);
-
-            return Err(MmuError::PermissionsFault{
-                is_read: false, 
-                virtual_address: address,
-                permissions,
-                memory,
-                size,
-            });
-        }
- 
-        // write the value
-        self.memory[address.0] = value;
-        
-        // update the access
-        self.permissions[address.0] |= PermField::Accessed;
-
-        // update the dirty bitmap and push memory
-        if self.permissions[address.0].is_superset_of(PermField::ReadAfterWrite) {
-            self.permissions[address.0] |= PermField::Read;
-        }
-
-        Ok(())
-    }
-
-    fn write_inner_big(&mut self, address: VirtAddr, value: u8) -> Result<(), MmuError> {
-        unimplemented!()
+        <Self as MmuReadWrite<T>>::write(self, address, value)
     }
 }

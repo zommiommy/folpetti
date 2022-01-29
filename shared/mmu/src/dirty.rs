@@ -20,7 +20,7 @@ impl DirtyState {
     /// Create a new Dirty State. To be compatible with the underlaying Bitmap
     /// `len` must be a multiple of the number of bits in a word of memory 
     /// (usize)
-    pub fn new(len: usize) -> Result<Self, ()> {
+    pub fn new(len: usize) -> Result<Self, usize> {
         Ok(DirtyState {
             dirty_indices: Vec::with_capacity(len),
             dirty_bitmap: Bitmap::new(len)?,
@@ -28,10 +28,10 @@ impl DirtyState {
         })
     }
 
-    /// Sign a certain address as dirty
+    /// Sign a certain block as dirty
     pub fn dirty(&mut self, block_idx: usize) {
         // if it wasn't dirty
-        if self.dirty_bitmap.get(block_idx) {
+        if !self.dirty_bitmap.get(block_idx) {
             // add the block idx to the indices
             self.dirty_indices.push(block_idx);
             // and set it's bit in the bitmap for deduplication
