@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "core_requirements",
+    "cpu",
+    "efi",
+    "elf",
+    "mmu",
+    "evil",
+]

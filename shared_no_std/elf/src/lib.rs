@@ -16,6 +16,7 @@
 //! elf.write_file("modified");
 //! ```
 //! For more examples see the usage in the strip program / the debugger
+#![no_std]
 
 use core::convert::TryInto;
 

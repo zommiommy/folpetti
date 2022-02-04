@@ -1,4 +1,4 @@
-#![feature(asm, panic_info_message)]
+#![feature(panic_info_message)]
 #![no_std]
 #![no_main]
 
@@ -10,6 +10,7 @@ use core_requirements;
 
 use efi::*;
 use core::panic::PanicInfo;
+use core::arch::asm;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -40,15 +41,6 @@ fn enable_performance_counters() {
     }
 }
 
-fn read_performance_counter() {
-    // TODO add selector for performance counter
-    // and figure out how to configure them
-    unsafe{
-        asm!(
-            "rdpmc "
-        )
-    }
-}
 
 #[no_mangle]
 extern fn efi_main(_image_handle: EfiHandle, system_table: *mut EfiSystemTable) {
@@ -90,7 +82,5 @@ extern fn efi_main(_image_handle: EfiHandle, system_table: *mut EfiSystemTable) 
 
     enable_performance_counters();
     
-    read_performance_counter();
-
     panic!("CULO");
 }

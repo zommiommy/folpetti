@@ -1,6 +1,6 @@
 /// An Efi guid representation
 #[repr(C)]
-#[derive(Debug, Copy, Clone, Eq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct EfiGuid {
     pub data1: u32,
     pub data2: u16,
@@ -8,6 +8,7 @@ pub struct EfiGuid {
     pub data4: [u8; 8],
 }
 
+/*
 impl_enum!(
     /// EFI memory types
     EfiGuidEnum, EfiGuid,
@@ -61,3 +62,4 @@ impl_enum!(
         data4: [0xbc,0x22,0x00,0x80,0xc7,0x3c,0x88,0x81],
     },
 );
+*/

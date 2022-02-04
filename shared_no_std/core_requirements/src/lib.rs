@@ -1,4 +1,3 @@
-#![feature(asm)]
 #![no_std]
 
 mod x86_64;

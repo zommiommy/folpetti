@@ -1,3 +1,5 @@
+use core::arch::asm;
+
 /// libc `memcpy` implementation in Rust
 ///
 /// # Parameters
