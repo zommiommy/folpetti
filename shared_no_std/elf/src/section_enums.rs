@@ -97,14 +97,76 @@ pub enum ELFSectionType {
     /// be SHN_UNDEF (0).
     SHT_SYMTAB_SHNDX,
 
+    /// Relocation entries; only offsets.
+    SHT_RELR,        
+
     /// Values in this inclusive range (0x60000000..=0x6fffffff) are reserved 
     /// for operating system-specific semantics.
     SHT_OS(u32),
 
+    SHT_ANDROID_REL,
+    SHT_ANDROID_RELA,
+    
+    /// LLVM ODR table.
+    SHT_LLVM_ODRTAB,
+    /// LLVM Linker Options.
+    SHT_LLVM_LINKER_OPTIONS,
+    /// List of address-significant symbols or safe ICF.
+    SHT_LLVM_ADDRSIG,
+    /// LLVM Dependent Library Specifiers.
+    SHT_LLVM_DEPENDENT_LIBRARIES,
+    /// Symbol partition specification.
+    SHT_LLVM_SYMPART,
+    /// ELF header for loadable partition.
+    SHT_LLVM_PART_EHDR,
+    /// Phdrs for loadable partition.
+    SHT_LLVM_PART_PHDR,
+    /// LLVM Basic Block Address Map.
+    SHT_LLVM_BB_ADDR_MAP,
+    /// LLVM Call Graph Profile.
+    SHT_LLVM_CALL_GRAPH_PROFILE,
+    
+    /// Relocation entries; only offsets.
+    SHT_ANDROID_RELR,
+
+    /// Object attributes.
+    SHT_GNU_ATTRIBUTES,
+    /// GNU-style hash table.
+    SHT_GNU_HASH,
+    /// GNU version definitions.
+    SHT_GNU_verdef,
+    /// GNU version references.
+    SHT_GNU_verneed,
+    /// GNU symbol versions table.
+    SHT_GNU_versym,
+    
     /// Values in this inclusive range (0x70000000..=0x7fffffff) are reserved 
     /// for processor-specific semantics.
     SHT_PROC(u32),
     
+    /// Exception Index table
+    SHT_ARM_EXIDX,
+    // BPABI DLL dynamic linking pre-emption map
+    SHT_ARM_PREEMPTMAP,
+    //  Object file compatibility attributes
+    SHT_ARM__RISCV_MSP430_ATTRIBUTES,
+
+    SHT_ARM_DEBUGOVERLAY,
+    SHT_ARM_OVERLAYSECTION,
+    /// Link editor is to sort the entries in this section based on their sizes
+    SHT_HEX_ORDERED ,   
+    /// Unwind information
+    SHT_X86_64_UNWIND,
+    /// Register usage information
+    SHT_MIPS_REGINFO,  
+    /// General options
+    SHT_MIPS_OPTIONS,  
+    /// DWARF debugging section.
+    SHT_MIPS_DWARF,    
+    /// ABI information.
+    SHT_MIPS_ABIFLAGS, 
+
+
     /// Values in this inclusive range (0x80000000..=0x8fffffff) are reserved 
     /// for application programs. 
     /// Section types between may be used by the application, 
@@ -135,6 +197,38 @@ impl From<u32> for ELFSectionType {
             16         => ELFSectionType::SHT_PREINIT_ARRAY,
             17         => ELFSectionType::SHT_GROUP,
             18         => ELFSectionType::SHT_SYMTAB_SHNDX,
+            19         => ELFSectionType::SHT_RELR,
+
+            0x60000001 => ELFSectionType::SHT_ANDROID_REL,
+            0x60000002 => ELFSectionType::SHT_ANDROID_RELA,
+            0x6fff4c00 => ELFSectionType::SHT_LLVM_ODRTAB,
+            0x6fff4c01 => ELFSectionType::SHT_LLVM_LINKER_OPTIONS,
+            0x6fff4c03 => ELFSectionType::SHT_LLVM_ADDRSIG,
+            0x6fff4c04 => ELFSectionType::SHT_LLVM_DEPENDENT_LIBRARIES,
+            0x6fff4c05 => ELFSectionType::SHT_LLVM_SYMPART,
+            0x6fff4c06 => ELFSectionType::SHT_LLVM_PART_EHDR,
+            0x6fff4c07 => ELFSectionType::SHT_LLVM_PART_PHDR,
+            0x6fff4c08 => ELFSectionType::SHT_LLVM_BB_ADDR_MAP,
+            0x6fff4c09 => ELFSectionType::SHT_LLVM_CALL_GRAPH_PROFILE,
+            0x6fffff00 => ELFSectionType::SHT_ANDROID_RELR,
+            0x6ffffff5 => ELFSectionType::SHT_GNU_ATTRIBUTES,
+            0x6ffffff6 => ELFSectionType::SHT_GNU_HASH,
+            0x6ffffffd => ELFSectionType::SHT_GNU_verdef,
+            0x6ffffffe => ELFSectionType::SHT_GNU_verneed,
+            0x6fffffff => ELFSectionType::SHT_GNU_versym,
+
+            0x70000001 => ELFSectionType::SHT_ARM_EXIDX,
+            0x70000002 => ELFSectionType::SHT_ARM_PREEMPTMAP,
+            0x70000003 => ELFSectionType::SHT_ARM__RISCV_MSP430_ATTRIBUTES,
+            0x70000004 => ELFSectionType::SHT_ARM_DEBUGOVERLAY,
+            0x70000005 => ELFSectionType::SHT_ARM_OVERLAYSECTION,
+            0x70000000 => ELFSectionType::SHT_HEX_ORDERED,
+            0x70000001 => ELFSectionType::SHT_X86_64_UNWIND,
+            0x70000006 => ELFSectionType::SHT_MIPS_REGINFO,
+            0x7000000d => ELFSectionType::SHT_MIPS_OPTIONS,
+            0x7000001e => ELFSectionType::SHT_MIPS_DWARF,
+            0x7000002a => ELFSectionType::SHT_MIPS_ABIFLAGS,
+             
             0x60000000..=0x6fffffff => ELFSectionType::SHT_OS(item),
             0x70000000..=0x7fffffff => ELFSectionType::SHT_PROC(item),
             0x80000000..=0x8fffffff => ELFSectionType::SHT_USER(item),
@@ -146,23 +240,55 @@ impl From<u32> for ELFSectionType {
 impl From<ELFSectionType> for u32 {
     fn from(item: ELFSectionType) -> Self {
         match item {
-            ELFSectionType::SHT_NULL          =>  0,
-            ELFSectionType::SHT_PROGBITS      =>  1,
-            ELFSectionType::SHT_SYMTAB        =>  2,
-            ELFSectionType::SHT_STRTAB        =>  3,
-            ELFSectionType::SHT_RELA          =>  4,
-            ELFSectionType::SHT_HASH          =>  5,
-            ELFSectionType::SHT_DYNAMIC       =>  6,
-            ELFSectionType::SHT_NOTE          =>  7,
-            ELFSectionType::SHT_NOBITS        =>  8,
-            ELFSectionType::SHT_REL           =>  9,
-            ELFSectionType::SHT_SHLIB         => 10,
-            ELFSectionType::SHT_DYNSYM        => 11,
-            ELFSectionType::SHT_INIT_ARRAY    => 14,
-            ELFSectionType::SHT_FINI_ARRAY    => 15,
-            ELFSectionType::SHT_PREINIT_ARRAY => 16,
-            ELFSectionType::SHT_GROUP         => 17,
-            ELFSectionType::SHT_SYMTAB_SHNDX  => 18,
+            ELFSectionType::SHT_NULL                         =>  0,
+            ELFSectionType::SHT_PROGBITS                     =>  1,
+            ELFSectionType::SHT_SYMTAB                       =>  2,
+            ELFSectionType::SHT_STRTAB                       =>  3,
+            ELFSectionType::SHT_RELA                         =>  4,
+            ELFSectionType::SHT_HASH                         =>  5,
+            ELFSectionType::SHT_DYNAMIC                      =>  6,
+            ELFSectionType::SHT_NOTE                         =>  7,
+            ELFSectionType::SHT_NOBITS                       =>  8,
+            ELFSectionType::SHT_REL                          =>  9,
+            ELFSectionType::SHT_SHLIB                        => 10,
+            ELFSectionType::SHT_DYNSYM                       => 11,
+            ELFSectionType::SHT_INIT_ARRAY                   => 14,
+            ELFSectionType::SHT_FINI_ARRAY                   => 15,
+            ELFSectionType::SHT_PREINIT_ARRAY                => 16,
+            ELFSectionType::SHT_GROUP                        => 17,
+            ELFSectionType::SHT_SYMTAB_SHNDX                 => 18,
+            ELFSectionType::SHT_RELR                         => 19,
+
+            ELFSectionType::SHT_ANDROID_REL                  => 0x60000001,
+            ELFSectionType::SHT_ANDROID_RELA                 => 0x60000002,
+            ELFSectionType::SHT_LLVM_ODRTAB                  => 0x6fff4c00,
+            ELFSectionType::SHT_LLVM_LINKER_OPTIONS          => 0x6fff4c01,
+            ELFSectionType::SHT_LLVM_ADDRSIG                 => 0x6fff4c03,
+            ELFSectionType::SHT_LLVM_DEPENDENT_LIBRARIES     => 0x6fff4c04,
+            ELFSectionType::SHT_LLVM_SYMPART                 => 0x6fff4c05,
+            ELFSectionType::SHT_LLVM_PART_EHDR               => 0x6fff4c06,
+            ELFSectionType::SHT_LLVM_PART_PHDR               => 0x6fff4c07,
+            ELFSectionType::SHT_LLVM_BB_ADDR_MAP             => 0x6fff4c08,
+            ELFSectionType::SHT_LLVM_CALL_GRAPH_PROFILE      => 0x6fff4c09,
+            ELFSectionType::SHT_ANDROID_RELR                 => 0x6fffff00,
+            ELFSectionType::SHT_GNU_ATTRIBUTES               => 0x6ffffff5,
+            ELFSectionType::SHT_GNU_HASH                     => 0x6ffffff6,
+            ELFSectionType::SHT_GNU_verdef                   => 0x6ffffffd,
+            ELFSectionType::SHT_GNU_verneed                  => 0x6ffffffe,
+            ELFSectionType::SHT_GNU_versym                   => 0x6fffffff,
+            
+            ELFSectionType::SHT_ARM_EXIDX                    => 0x70000001,
+            ELFSectionType::SHT_ARM_PREEMPTMAP               => 0x70000002,
+            ELFSectionType::SHT_ARM__RISCV_MSP430_ATTRIBUTES => 0x70000003,
+            ELFSectionType::SHT_ARM_DEBUGOVERLAY             => 0x70000004,
+            ELFSectionType::SHT_ARM_OVERLAYSECTION           => 0x70000005,
+            ELFSectionType::SHT_HEX_ORDERED                  => 0x70000000,   
+            ELFSectionType::SHT_X86_64_UNWIND                => 0x70000001, 
+            ELFSectionType::SHT_MIPS_REGINFO                 => 0x70000006,  
+            ELFSectionType::SHT_MIPS_OPTIONS                 => 0x7000000d,  
+            ELFSectionType::SHT_MIPS_DWARF                   => 0x7000001e,  
+            ELFSectionType::SHT_MIPS_ABIFLAGS                => 0x7000002a, 
+
             ELFSectionType::SHT_OS(val)   => val,
             ELFSectionType::SHT_PROC(val) => val,
             ELFSectionType::SHT_USER(val) => val,
@@ -171,174 +297,98 @@ impl From<ELFSectionType> for u32 {
     }
 }
 
-#[allow(non_camel_case_types)]
-#[derive(Debug, Clone, PartialEq)]
-#[repr(u64)]
-pub enum ELFSectionAttributeFlags {
-    /// The section contains data that should be writable during process 
-    ///execution.
-    SHF_WRITE,
-    
-    /// The section occupies memory during process execution. Some control sections do not reside in the memory image of
-    /// an object file; this attribute is off for those sections.
-    SHF_ALLOC,
+impl_enum!(
+    /// Bitfields inside of a [`ELFSectionAttributeFlags`]
+    ELFSectionAttributeFlagsField, u64, 
+    /// Section data should be writable during execution.
+    SHF_WRITE => 0x1,
+    /// Section occupies memory during program execution.
+    SHF_ALLOC => 0x2,
+    /// Section contains executable machine instructions.
+    SHF_EXECINSTR => 0x4,
+    /// The data in this section may be merged.
+    SHF_MERGE => 0x10,
+    /// The data in this section is null-terminated strings.
+    SHF_STRINGS => 0x20,
+    /// A field in this section holds a section header table index.
+    SHF_INFO_LINK => 0x40,
+    /// Adds special ordering requirements for link editors.
+    SHF_LINK_ORDER => 0x80,
+    /// This section requires special OS-specific processing to avoid incorrect
+    /// behavior.
+    SHF_OS_NONCONFORMING => 0x100,
+    /// This section is a member of a section group.
+    SHF_GROUP => 0x200,
+    /// This section holds Thread-Local Storage.
+    SHF_TLS => 0x400,
+    /// Identifies a section containing compressed data.
+    SHF_COMPRESSED => 0x800,
+    /// This section should not be garbage collected by the linker.
+    SHF_GNU_RETAIN => 0x200000,
+    /// This section is excluded from the final executable or shared library.
+    SHF_EXCLUDE => 0x80000000,
+    /// Start of target-specific flags.
+    SHF_MASKOS => 0x0ff00000,
+    /// Bits indicating processor-specific flags.
+    SHF_MASKPROC => 0xf0000000,
+    /// All sections with the "d" flag are grouped together by the linker to 
+    /// form the data section and the dp register is set to the start of the 
+    /// section by the boot code.
+    XCORE_SHF_DP_SECTION => 0x10000000,
+    /// All sections with the "c" flag are grouped together by the linker to 
+    /// form the constant pool and the cp register is set to the start of the 
+    /// constant pool by the boot code.
+    XCORE_SHF_CP_SECTION => 0x20000000,
+    /// If an object file section does not have this flag set, then it may not 
+    /// hold more than 2GB and can be freely referred to in objects using 
+    /// smaller code models. Otherwise, only objects using larger code models 
+    /// can refer to them. For example, a medium code model object can refer to 
+    /// data in a section that sets this flag besides being able to refer to 
+    /// data in a section that does not set it; likewise, a small code model 
+    /// object can refer only to code in a section that does not set this flag.
+    SHF_X86_64_LARGE => 0x10000000,
+    /// All sections with the GPREL flag are grouped into a global data area
+    /// for faster accesses
+    SHF_HEX_GPREL => 0x10000000,
+    /// Section contains text/data which may be replicated in other sections.
+    /// Linker must retain only one copy.
+    SHF_MIPS_NODUPES => 0x01000000,
+    /// Linker must generate implicit hidden weak names.
+    SHF_MIPS_NAMES => 0x02000000,
+    /// Section data local to process.
+    SHF_MIPS_LOCAL => 0x04000000,
+    /// Do not strip this section.
+    SHF_MIPS_NOSTRIP => 0x08000000,
+    /// Section must be part of global data area.
+    SHF_MIPS_GPREL => 0x10000000,
+    /// This section should be merged.
+    SHF_MIPS_MERGE => 0x20000000,
+    /// Address size to be inferred from section entry size.
+    SHF_MIPS_ADDR => 0x40000000,
+    /// Section data is string data by default.
+    SHF_MIPS_STRING => 0x80000000,
+    /// Make code section unreadable when in execute-only mode
+    SHF_ARM_PURECODE => 0x20000000,
+);
 
-    /// The section contains executable machine instructions.
-    SHF_EXECINSTR,
-
-    /// The data in the section may be merged to eliminate duplication. 
-    /// Unless the SHF_STRINGS flag is also set, the data elements in the section 
-    /// are of a uniform size. The size of each element is specified in the 
-    /// section header's sh_entsize field. If the SHF_STRINGS flag is also set, 
-    /// the data elements consist of null-terminated character strings. The size 
-    /// of each character is specified in the section header's sh_entsize field.
-    /// Each element in the section is compared against other elements in 
-    /// sections with the same name, type and flags. Elements that would have 
-    /// identical values at program ru-time may be merged. Relocations 
-    /// referencing elements of such sections must be resolved to the merged 
-    /// locations of the referenced values. Note that any relocatable values, 
-    /// including values that would result in run-time relocations, must be 
-    /// analyzed to determine whether the run-time values would actually be 
-    /// identical. An ABI-conforming object file may not depend on specific 
-    /// elements being merged, and an ABI-conforming link editor may choose not 
-    /// to merge specific elements.
-    SHF_MERGE,
-
-    /// The data elements in the section consist of null-terminated character strings. The size of each character is 
-    /// specified in the section header's sh_entsize field.
-    SHF_STRINGS,
-    
-    /// The sh_info field of this section header holds a section header table 
-    /// index.
-    SHF_INFO_LINK,
-
-    /// This flag adds special ordering requirements for link editors. 
-    /// The requirements apply if the sh_link field of this section's header 
-    /// references another section (the linked-to section). If this section is 
-    /// combined with other sections in the output file, it must appear in the 
-    /// same relative order with respect to those sections, as the linked-to 
-    /// section appears with respect to sections the linked-to section is 
-    /// combined with.
-    SHF_LINK_ORDER,
-
-    /// This section requires special OS-specific processing (beyond the 
-    /// standard linking rules) to avoid incorrect behavior. If this section has
-    /// either an sh_type value or contains sh_flags bits in the OS-specific 
-    /// ranges for those fields, and a link editor processing this section does 
-    /// not recognize those values, then the link editor should reject the 
-    /// object file containing this section with an error.
-    SHF_OS_NONCONFORMING,
-
-    /// This section is a member (perhaps the only one) of a section group. 
-    /// The section must be referenced by a section of type SHT_GROUP. 
-    /// The SHF_GROUP flag may be set only for sections contained in relocatable
-    /// objects (objects with the ELF header e_type member set to ET_REL).
-    SHF_GROUP,
-
-    /// This section holds Thread-Local Storage, meaning that each separate execution flow has its own distinct instance
-    /// of this data. Implementations need not support this flag.
-    SHF_TLS,
-
-    /// All bits included in this mask are reserved for operating 
-    ///system-specific semantics.
-    SHF_MASKOS,
-
-    /// All bits included in this mask are reserved for processor-specific 
-    /// semantics.
-    /// If meanings are specified, the processor supplement explains them.
-    SHF_MASK_PROC,
-
-    // ~~~~~~~~~~ Custom flags for utility ~~~~~~~~~~~~
-
-    /// No flag is setted
-    SHF_NO_FLAGS,
-
-    /// Multiple flags are selected => Vector of flags
-    SHF_MULTIFLAGS(Vec<ELFSectionAttributeFlags>),
-
-    /// Not used bits
-    UNKNOWN(u64),
-}
-
-/// A constant vector of the possibl flags.
-/// This is only needed to iterate over the enum.
-const ELF_SECTION_ATTRIBUTE_FLAGS: [ELFSectionAttributeFlags; 12] = [
-    ELFSectionAttributeFlags::SHF_WRITE,
-    ELFSectionAttributeFlags::SHF_ALLOC,
-    ELFSectionAttributeFlags::SHF_EXECINSTR,
-    ELFSectionAttributeFlags::SHF_MERGE,
-    ELFSectionAttributeFlags::SHF_STRINGS,
-    ELFSectionAttributeFlags::SHF_INFO_LINK,
-    ELFSectionAttributeFlags::SHF_LINK_ORDER,
-    ELFSectionAttributeFlags::SHF_OS_NONCONFORMING,
-    ELFSectionAttributeFlags::SHF_GROUP,
-    ELFSectionAttributeFlags::SHF_TLS,
-    ELFSectionAttributeFlags::SHF_MASKOS,
-    ELFSectionAttributeFlags::SHF_MASK_PROC,
-];
+#[derive(Debug, Clone, Copy)]
+pub struct ELFSectionAttributeFlags(u64);
 
 impl ELFSectionAttributeFlags {
-    pub fn to_flags(mut val: u64) -> Vec<ELFSectionAttributeFlags> {
-        let mut result = Vec::new();
-
-        for flag in &ELF_SECTION_ATTRIBUTE_FLAGS {
-            let flag_num = u64::from(flag.clone());
-            if 0 != (val & flag_num) {
-                result.push(flag.clone());
-                val ^= flag_num;
-            }    
-        }
-        
-        if val != 0 {
-            result.push(
-                ELFSectionAttributeFlags::UNKNOWN(val)
-            );
-        }
-
-        if result.is_empty() {
-            result.push(ELFSectionAttributeFlags::SHF_NO_FLAGS);
-        }
-
-        result
+    pub fn is_superset_of<P: Into<u64>>(&self, other: P) -> bool {
+        let other = other.into();
+        (self.0 & other) == other
     }
 }
 
-impl From<u64> for ELFSectionAttributeFlags {
-    fn from(item: u64) -> Self {
-        let flags = ELFSectionAttributeFlags::to_flags(item);
-
-        if flags.len() == 1 {
-            flags[0].clone()
-        } else {
-            ELFSectionAttributeFlags::SHF_MULTIFLAGS(flags)
-        }
+impl From<ELFSectionAttributeFlagsField> for ELFSectionAttributeFlags {
+    fn from(value: ELFSectionAttributeFlagsField) -> Self {
+        ELFSectionAttributeFlags(value.into())
     }
 }
 
-impl From<ELFSectionAttributeFlags> for u64 {
-    fn from(item: ELFSectionAttributeFlags) -> Self {
-        match item {
-            ELFSectionAttributeFlags::SHF_NO_FLAGS         =>  0x0,
-            ELFSectionAttributeFlags::SHF_WRITE            =>  0x1,
-            ELFSectionAttributeFlags::SHF_ALLOC            =>  0x2,
-            ELFSectionAttributeFlags::SHF_EXECINSTR        =>  0x4,
-            ELFSectionAttributeFlags::SHF_MERGE            =>  0x10,
-            ELFSectionAttributeFlags::SHF_STRINGS          =>  0x20,
-            ELFSectionAttributeFlags::SHF_INFO_LINK        =>  0x40,
-            ELFSectionAttributeFlags::SHF_LINK_ORDER       =>  0x80,
-            ELFSectionAttributeFlags::SHF_OS_NONCONFORMING =>  0x100,
-            ELFSectionAttributeFlags::SHF_GROUP            =>  0x200,
-            ELFSectionAttributeFlags::SHF_TLS              =>  0x400,
-            ELFSectionAttributeFlags::SHF_MASKOS           =>  0x0ff00000,
-            ELFSectionAttributeFlags::SHF_MASK_PROC        =>  0xf0000000,
-            ELFSectionAttributeFlags::UNKNOWN(val)        => val,
-            ELFSectionAttributeFlags::SHF_MULTIFLAGS(val) => {
-                let mut result = 0;
-                for flag in val {
-                    result |= u64::from(flag);
-                }
-                result
-            },
-        }
+impl TryFrom<ELFSectionAttributeFlags> for ELFSectionAttributeFlagsField {
+    fn try_from(value: ELFSectionAttributeFlagsField) -> Self {
+        ELFSectionAttributeFlags(value.into())
     }
 }

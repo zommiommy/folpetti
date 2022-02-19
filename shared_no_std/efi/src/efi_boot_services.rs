@@ -22,6 +22,23 @@ pub struct EfiBootServices {
     pub _free_pages: usize,
 
     /// Returns the courrent boot services memory map and memory map key.
+    /// 
+    /// # Arguments
+    /// * `memory_map_size`: A pointer to the size, in bytes, of the MemoryMap 
+    /// buffer. On input, this is the size of the buffer allocated by the 
+    /// caller. On output, it is the size of the buffer returned by the firmware 
+    /// if the buffer was large enough, or the size of the buffer needed to 
+    /// contain the map if the buffer was too small.
+    /// * `memory_map`: A pointer to the buffer in which firmware places the 
+    /// current memory map. The map is an array of [`EfiMemoryDescriptor`]. See
+    /// “Related Definitions.”
+    /// * `map_key`: A pointer to the location in which firmware returns the key 
+    /// for the current memory map.
+    /// * `descriptor_size`: A pointer to the location in which firmware returns
+    ///  the size, in bytes, of an individual [`EfiMemoryDescriptor`].
+    /// * `descriptor_version`: A pointer to the location in which firmware 
+    /// returns the version number associated with the [`EfiMemoryDescriptor`]. 
+    /// See “Related Definitions.”
     pub get_memory_map: unsafe fn(
         memory_map_size:    &mut usize,
         memory_map:         *mut u8,

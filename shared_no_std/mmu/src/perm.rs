@@ -28,12 +28,6 @@ pub enum PermField {
     Tainted        = 1 << 5,
 }
 
-impl PermField {
-    pub const fn const_into_u8(self) -> u8 {
-        self as u8
-    }
-}
-
 // Convertion utilities
 impl From<PermField> for u8 {
     #[inline(always)]

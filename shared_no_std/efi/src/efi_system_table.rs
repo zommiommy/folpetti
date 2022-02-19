@@ -23,6 +23,14 @@ pub unsafe fn register_system_table(system_table: *mut EfiSystemTable) {
     ).expect("Could not register the system table");
 }
 
+/// Remove the system table, if present, so that it can-no-longer be accessed
+pub unsafe fn unregister_system_table() {
+    EFI_SYSTEM_TABLE.store(
+        core::ptr::null_mut(), 
+        Ordering::SeqCst,
+    );
+}
+
 /// Contains pointers to the runtime and boot services tables.
 #[derive(Debug)]
 #[repr(C)]
@@ -128,7 +136,7 @@ impl EfiSystemTable {
     }
 
     /// Get the memory map for the system from UEFI
-    pub fn get_memory_map(&self) -> &MemoryMap {
+    pub fn get_memory_map_and_key(&self) -> (&MemoryMap, usize) {
         unsafe {
             MEMORY_MAP.size = core::mem::size_of_val(&MEMORY_MAP.data);
             let mut key = 0;
@@ -146,7 +154,7 @@ impl EfiSystemTable {
                 "Error {:x?} while getting the memory map", ret
             );
 
-            &MEMORY_MAP
+            (&MEMORY_MAP, key)
         }
     }
 }

@@ -1,5 +1,18 @@
+
+pub enum ParseError<'a> {
+    OutOfBound{
+        field_name: &'static str,
+    },
+    InvalidBytes{
+        field_name: &'static str,
+        value: &'a [u8],
+        is_little_endian: bool,
+    }
+}
+
 pub trait Parse<T> {
-    fn inner_parse(&mut self) -> T;
+    fn inner_parse_be(&mut self) -> Result<T, ParseError<'_>>;
+    fn inner_parse_le(&mut self) -> Result<T, ParseError<'_>>;
 }
 
 pub struct Data<'a> {
@@ -27,7 +40,7 @@ impl<'a> Data<'a> {
     }
 
     #[inline]
-    pub fn parse<T>(&mut self) -> T 
+    pub fn parse<T>(&mut self) -> Result<T, &'static str> 
     where
         Data<'a>: Parse<T> 
     {
@@ -37,10 +50,10 @@ impl<'a> Data<'a> {
 
 impl <'a> Parse<u8> for Data<'a> {
     #[inline]
-    fn inner_parse(&mut self) -> u8 {
+    fn inner_parse(&mut self) -> Result<u8, &'static str> {
         let result = self.data[0];
         self.data = &self.data[1..];
-        result
+        Ok(result)
     }
 }
 
@@ -113,7 +126,6 @@ macro_rules! impl_enum {
                 )*
                 $field,
             )*
-            Unknown($enum_repr),
         }
 
         impl From<$enum_repr> for $enum_name {
@@ -123,7 +135,6 @@ macro_rules! impl_enum {
                     $(
                         $value => $enum_name::$field,
                     )*
-                    x @ _ => $enum_name::Unknown(x),
                 }
             }
         }
@@ -135,7 +146,6 @@ macro_rules! impl_enum {
                     $(
                         $enum_name::$field => $value,
                     )*
-                    $enum_name::Unknown(x) => x,
                 }
             }
         }

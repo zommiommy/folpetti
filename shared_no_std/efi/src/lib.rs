@@ -9,7 +9,7 @@ mod efi_configuration_table;
 pub use efi_configuration_table::*;
 
 mod efi_guid;
-pub use efi_guid::EfiGuid;
+pub use efi_guid::*;
 
 mod efi_handle;
 pub use efi_handle::EfiHandle;

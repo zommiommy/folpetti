@@ -33,5 +33,5 @@ pub enum Instruction<I: IndexTrait> {
 
 pub struct Graph {
     instructions: Vec<usize>,
-    values: Vec<Word>,
+    //values: Vec<Word>,
 }

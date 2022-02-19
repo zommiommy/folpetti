@@ -12,7 +12,7 @@ macro_rules! get_field {
 
     ($data:expr, $t:ty, $endianess:expr) => {{  
         // split the data
-        let (val, data) = $data.split_at(std::mem::size_of::<$t>());
+        let (val, data) = $data.split_at(core::mem::size_of::<$t>());
 
         // parse the current value
         let result = match $endianess {
@@ -45,9 +45,9 @@ macro_rules! write_field {
             _ => panic!("Unknown endianess"),
         };
         // assign the bytes
-        $data[..std::mem::size_of::<$t>()].clone_from_slice(&result);
+        $data[..core::mem::size_of::<$t>()].clone_from_slice(&result);
         // move the reference forward
-        let (_, data) = $data.split_at_mut(std::mem::size_of::<$t>());
+        let (_, data) = $data.split_at_mut(core::mem::size_of::<$t>());
 
         data
     }};

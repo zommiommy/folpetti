@@ -1,9 +1,10 @@
 [workspace]
 members = [
+    "acpi",
     "core_requirements",
-    "cpu",
     "efi",
     "elf",
+    "emu_arm",
     "mmu",
     "evil",
 ]

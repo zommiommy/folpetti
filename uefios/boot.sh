@@ -5,6 +5,7 @@ set -e
 qemu-system-x86_64 \
     -enable-kvm \
     -m 128 \
+    -smp 8 \
     -nographic \
     -bios /usr/share/OVMF/x64/OVMF_CODE.fd \
     -device driver=e1000,netdev=n0 \

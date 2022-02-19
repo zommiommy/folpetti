@@ -20,3 +20,12 @@ macro_rules! print {
         );
     };
 }
+
+/// The standard Rust`println!()` macro!
+#[macro_export]
+macro_rules! println {
+    ($($arg:tt)*) => {
+        print!($($arg)*);
+        print!("\n");
+    };
+}

@@ -15,9 +15,11 @@
 //! // Dump the new elf with the modification
 //! elf.write_file("modified");
 //! ```
-//! For more examples see the usage in the strip program / the debugger
+//! For more examples see the usage in the strip program / the debugger 
 #![no_std]
 
+/*
+// TODO!: uncomment
 use core::convert::TryInto;
 
 #[macro_use] mod data;
@@ -49,3 +51,4 @@ pub use segment::Segment;
 mod segment_enums;
 pub use segment_enums::*;
 
+*/
