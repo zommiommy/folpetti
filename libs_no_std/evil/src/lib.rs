@@ -3,7 +3,7 @@
 
 #![no_std]
 extern crate alloc;
-use alloc::vec::Vec;
+use alloc::vec::{self, Vec};
 
 mod word;
 pub use word::*;
@@ -32,6 +32,6 @@ pub enum Instruction<I: IndexTrait> {
 
 
 pub struct Graph {
-    instructions: Vec<usize>,
+    //instructions: Vec<usize>,
     //values: Vec<Word>,
 }

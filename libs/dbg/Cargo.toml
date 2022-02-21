@@ -6,6 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-elf = {path = "../elf"}
+elf = {path = "../../libs_no_std/elf"}
 libc = "0.2.99"
 linux-personality = "1.0.0"

@@ -6,6 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-acpi= {path = "../shared_no_std/acpi"}
-efi= {path = "../shared_no_std/efi"}
-core_requirements= {path = "../shared_no_std/core_requirements"}
+acpi= {path = "../libs_no_std/acpi"}
+efi= {path = "../libs_no_std/efi"}
+core_requirements= {path = "../libs_no_std/core_requirements"}

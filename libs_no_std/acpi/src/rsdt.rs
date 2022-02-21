@@ -27,7 +27,8 @@ pub struct DescriptionHeader {
 }
 
 impl DescriptionHeader {
-    /// Validate the checksum and signature
+    /// Validate the checksum and signature, the sum of all the bytes must
+    /// be zero.
     pub fn validate(&self) -> Result<(), u8> {
         let length = self.length as usize;
         let sum = unsafe{

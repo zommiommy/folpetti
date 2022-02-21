@@ -1,43 +1,32 @@
-#![no_std]
-use core::ops::Range;
+use crate::utils::*;
 
-#[macro_export]
-macro_rules! const_assert {
-    ($x:expr $(,)?) => {
-        #[allow(unknown_lints, eq_op)]
-        const _: [(); 0 - !{ const ASSERT: bool = $x; ASSERT } as usize] = [];
-    };
+pub enum Reg {
+    R0,
+    R1,
+    R2,
+    R3,
+    R4,
+    R5,
+    R6,
+    R7,
+    R8,
+    R9,
+    R10,
+    R11,
+    R12,
+    Fp, // X29
+    Lr, // x30
+
+    Xzr,
+    Pc,
+    Sp,
+    Elr,
+    Spsr,
 }
 
-pub trait BitExtract {
-    fn extract_bits<const START: usize, const END: usize>(&self) -> Self;
-    fn extract_bit<const IDX: usize>(&self) -> Self;
-    fn set_bits<const START: usize, const END: usize>(&mut self, value: Self);
-}
-
-impl BitExtract for u32 {
-    #[inline(always)]
-    fn extract_bits<const START: usize, const END: usize>(&self) -> u32 {
-        // check that the range is reasonable
-        debug_assert!(START <  8 * core::mem::size_of::<u32>());
-        debug_assert!(END   <= 8 * core::mem::size_of::<u32>());   
-        debug_assert!(START <= END); 
-        
-        (self >> START) & ((1 << (END - START)) - 1)
-    }
-
-    #[inline(always)]
-    fn extract_bit<const IDX: usize>(&self) -> u32 {
-        // check that the idx is reasonable
-        debug_assert!(IDX <  8 * core::mem::size_of::<u32>());
-        
-        (self >> IDX) & 1
-    }
-
-    #[inline(always)]
-    fn set_bits<const START: usize, const END: usize>(&mut self, value: u32) {
-        unimplemented!() // TODO!
-    }
+/// 
+pub trait ArmV8A32User<E> {
+    fn add(&mut self, condition: Cond, r1: Reg, r2: Reg, r3: Reg) -> Result<(), E>;
 }
 
 #[repr(u8)]
@@ -80,8 +69,8 @@ pub enum Cond {
 }
 
 
-/// <https://developer.arm.com/documentation/ddi0406/cb/Application-Level-Architecture/ARM-Instruction-Set-Encoding/ARM-instruction-set-encoding#:~:text=The%20ARM%20instruction%20stream%20is,31%3A25%2C%204%5D.>
-fn execute_aarch64(word: u32) {
+/// <https://developer.arm.com/documentation/ddi0406/cb/Application-Level-Architecture/ARM-Instruction-Set-Encoding/ARM-instruction-set-encoding>
+pub fn disassemble_armv8a_a32<U: ArmV8A32User<()>>(user: &mut U, word: u32) -> Result<(), ()>{
     let cond = word.extract_bits::<28,32>();
     let op1  = word.extract_bits::<25,28>();
 
@@ -135,4 +124,6 @@ fn execute_aarch64(word: u32) {
             unreachable!();
         }
     }
+
+    Ok(())
 }
