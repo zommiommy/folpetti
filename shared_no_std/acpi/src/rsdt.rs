@@ -130,6 +130,16 @@ impl RSDT {
             )
         }
     }
+
+    pub fn get(&self, signature: &[u8; 4]) -> Option<&DescriptionHeader> {
+        self.get_entries().iter()
+            .map(|&x| x as *const DescriptionHeader)
+            .find(|&x| {
+                unsafe{&(*x).signature == signature} 
+            }).and_then(|header| {
+                Some(unsafe{&*header})
+            })
+    }
 }
 
 
@@ -173,5 +183,23 @@ impl XSDT {
                 self.get_number_of_entries(),
             )
         }
+    }
+
+    pub fn get(&self, signature: &[u8; 4]) -> Option<&DescriptionHeader> {
+        self.get_entries().iter()
+            .map(|&x| x as *const DescriptionHeader)
+            .find(|&x| {
+                unsafe{&(*x).signature == signature} 
+            }).and_then(|header| {
+                Some(unsafe{&*header})
+            })
+    }
+
+    pub fn get_madt(&self) -> Option<&crate::MADT> {
+        self.get(b"APIC").and_then(|ptr| {
+            unsafe{
+                Some(&*(ptr as *const DescriptionHeader as *const crate::MADT))
+            }
+        })
     }
 }

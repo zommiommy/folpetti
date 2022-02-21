@@ -1,8 +1,9 @@
+use crate::{RSDT, XSDT};
 
 #[repr(C, packed)]
 #[derive(Clone, Copy, PartialEq, Eq)]
 /// APIC 1.0 pointer to RSDT
-pub struct RDSP {
+pub struct RSDP {
     /// This should always be “RSD PTR ”
     pub signature: [u8; 8],
     /// This is the checksum of the fields defined in the ACPI 1.0
@@ -23,7 +24,12 @@ pub struct RDSP {
     pub rsdt_address: u32,
 }
 
-impl RDSP {
+impl RSDP {
+    pub fn get_rsdt(&self) -> Result<&RSDT, u8> {
+        self.validate()?;
+        Ok(unsafe{&*(self.rsdt_address as *const RSDT)})
+    }
+
     /// Validate the checksum and signature
     pub fn validate(&self) -> Result<(), u8> {
         if &self.signature != b"RSD PTR " {
@@ -47,9 +53,9 @@ impl RDSP {
     }
 }
 
-impl core::fmt::Debug for RDSP {
+impl core::fmt::Debug for RSDP {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let mut fmt = f.debug_struct("RDSP");
+        let mut fmt = f.debug_struct("RSDP");
 
         let signature = self.signature;
         if let Ok(as_str) = core::str::from_utf8(&signature) {
@@ -112,6 +118,16 @@ pub struct XSDP {
 }
 
 impl XSDP {
+    pub fn get_rsdt(&self) -> Result<&RSDT, u8> {
+        self.validate()?;
+        Ok(unsafe{&*(self.rsdt_address as *const RSDT)})
+    }
+
+    pub fn get_xsdt(&self) -> Result<&XSDT, u8> {
+        self.validate()?;
+        Ok(unsafe{&*(self.xsdt_address as *const XSDT)})
+    }
+
     /// Validate the checksum and signature
     pub fn validate(&self) -> Result<(), u8> {
         if &self.signature != b"RSD PTR " {
@@ -121,7 +137,7 @@ impl XSDP {
         // TODO!: figure this out
         let sum = unsafe{
             let base_addr = self as *const Self as usize;
-            (base_addr..base_addr + core::mem::size_of::<RDSP>())
+            (base_addr..base_addr + core::mem::size_of::<RSDP>())
                 .fold(0_u8, |acc, ptr| {
                     acc.wrapping_add(*(ptr as *const u8))
                 })
@@ -134,7 +150,7 @@ impl XSDP {
         // TODO!: figure this out
         let sum = unsafe{
             let base_addr = self as *const Self as usize;
-            (base_addr + core::mem::size_of::<RDSP>()..base_addr + core::mem::size_of::<Self>())
+            (base_addr + core::mem::size_of::<RSDP>()..base_addr + core::mem::size_of::<Self>())
                 .fold(0_u8, |acc, ptr| {
                     acc.wrapping_add(*(ptr as *const u8))
                 })

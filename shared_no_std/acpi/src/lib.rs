@@ -1,7 +1,10 @@
 #![no_std]
 
-mod rdsp;
-pub use rdsp::*;
+mod rsdp;
+pub use rsdp::*;
 
-mod rdst;
-pub use rdst::*;
+mod rsdt;
+pub use rsdt::*;
+
+mod madt;
+pub use madt::*;

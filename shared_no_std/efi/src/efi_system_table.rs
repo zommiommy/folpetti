@@ -157,4 +157,14 @@ impl EfiSystemTable {
             (&MEMORY_MAP, key)
         }
     }
+
+    /// Get a table by guid
+    pub fn get<T: Into<crate::EfiGuid>>(&self, guid: T) -> Option<&EfiConfigurationTable> {
+        let guid: crate::EfiGuid = guid.into();
+
+        self.get_efi_tables().iter()
+            .find(|x| 
+                x.vendor_guid == guid
+            )
+    }
 }

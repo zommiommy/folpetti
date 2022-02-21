@@ -4,6 +4,7 @@
 
 #[macro_use] mod print;
 
+use acpi::DescriptionHeader;
 // Import the core requirements routines for the compiler
 #[allow(unused_imports)]
 use core_requirements;
@@ -62,16 +63,14 @@ extern fn efi_main(image_handle: EfiHandle, system_table: *mut EfiSystemTable) {
     println!("{:>8} {:>8} {:>8} {}", "Phys", "Virt", "#pages", "type & perms");
     for i in 0..memory_map.len() {
         let table = memory_map.get_table(i).unwrap();
-        if !table.typ.avail_post_exit_boot_services() {
-            println!(
-                "{:08x} {:08x} {:08x} {:>20?} {:?}", 
-                table.physical_start,
-                table.virtual_start,
-                table.number_of_pages,
-                table.typ,
-                table.attribute,
-            );
-        }
+        println!(
+            "{:08x} {:08x} {:08x} {:>20?} {:?}", 
+            table.physical_start,
+            table.virtual_start,
+            table.number_of_pages,
+            table.typ,
+            table.attribute,
+        );
     }
 
     println!("==================================================================");
@@ -82,25 +81,25 @@ extern fn efi_main(image_handle: EfiHandle, system_table: *mut EfiSystemTable) {
     }
     println!("==================================================================");
 
-    let apic_ptr = st.get_efi_tables().iter()
-        .find(|x| 
-            x.vendor_guid == efi::EfiGuidEnum::Acpi20Table.into()
-        ).expect("Cannto find APIC 2.0 EFI Configuration Table");
+    let acpi_ptr = st.get(efi::EfiGuidEnum::Acpi20Table)
+        .expect("Cannto find APIC 2.0 EFI Configuration Table");
 
-    let xsdp =  unsafe{&*(apic_ptr.vendor_table as *const acpi::XSDP)};
+    let xsdp: &acpi::XSDP =  acpi_ptr.try_into()
+        .expect("Invalid table for XSDP or currpted table");
     
     println!("{:#4x?}", xsdp);
-    xsdp.validate().expect("Corrupted XSDP");
 
-    let xsdt =  unsafe{&*(xsdp.xsdt_address as *const acpi::XSDT)};
+    let xsdt = xsdp.get_xsdt().expect("Corrupted XSDT");
     println!("{:#4x?}", xsdt);
-    xsdt.validate().expect("Corrupted XSDT");
-    println!("{:#4x?}", xsdt.get_entries());
-
+    
     for ptr in xsdt.get_entries() {
         println!("{:?}", unsafe{&**ptr});
     }
+    println!("------------------------------------------------------------------");
 
+    let madt = xsdt.get_madt().expect("MADT table not found in XSDT");
+    
+    println!("{:x?}", madt);
 
     // Exit boot services
     unsafe{
