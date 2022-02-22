@@ -1,7 +1,6 @@
 pub trait BitExtract {
     fn extract_bits<const START: usize, const END: usize>(&self) -> Self;
     fn extract_bit<const IDX: usize>(&self) -> Self;
-    fn set_bits<const START: usize, const END: usize>(&mut self, value: Self);
 }
 
 impl BitExtract for u32 {
@@ -22,10 +21,5 @@ impl BitExtract for u32 {
         debug_assert!(IDX <  8 * core::mem::size_of::<u32>());
         
         (self >> IDX) & 1
-    }
-
-    #[inline(always)]
-    fn set_bits<const START: usize, const END: usize>(&mut self, value: u32) {
-        unimplemented!() // TODO!
     }
 }
