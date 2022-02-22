@@ -1108,6 +1108,77 @@ pub trait ArmV8aA64User {
     /// See [`ArmV8aA64User::csneg_32`]
     fn csneg_64(&mut self, rd: RegA64, rn: RegA64, cond: Cond, rm: RegA64)
         -> Result<(), Self::Error>;
+
+    /// [Reference](https://developer.arm.com/documentation/ddi0602/2021-12/Base-Instructions/MADD--Multiply-Add-?lang=en)
+    /// Multiply-Add multiplies two register values, adds a third register 
+    /// value, and writes the result to the destination register.
+    /// 
+    /// This instruction is used by the alias MUL.
+    fn madd_32(&mut self, rd: RegA64, rn: RegA64, ra: RegA64, rm: RegA64)
+        -> Result<(), Self::Error>;
+    /// See [`ArmV8aA64User::madd_32`]
+    fn madd_64(&mut self, rd: RegA64, rn: RegA64, ra: RegA64, rm: RegA64)
+        -> Result<(), Self::Error>;
+
+    /// [Reference](https://developer.arm.com/documentation/ddi0602/2021-12/Base-Instructions/MSUB--Multiply-Subtract-?lang=en)
+    /// Multiply-Subtract multiplies two register values, subtracts the product 
+    /// from a third register value, and writes the result to the destination 
+    /// register.
+    /// 
+    /// This instruction is used by the alias MNEG.
+    fn msub_32(&mut self, rd: RegA64, rn: RegA64, ra: RegA64, rm: RegA64)
+        -> Result<(), Self::Error>;
+    /// See [`ArmV8aA64User::msub_32`]
+    fn msub_64(&mut self, rd: RegA64, rn: RegA64, ra: RegA64, rm: RegA64)
+        -> Result<(), Self::Error>;
+
+    /// [Reference](https://developer.arm.com/documentation/ddi0602/2021-12/Base-Instructions/SMADDL--Signed-Multiply-Add-Long-?lang=en)
+    /// Signed Multiply-Add Long multiplies two 32-bit register values, adds a 
+    /// 64-bit register value, and writes the result to the 64-bit destination 
+    /// register.
+    /// 
+    /// This instruction is used by the alias SMULL.
+    fn smaddl(&mut self, rd: RegA64, rn: RegA64, ra: RegA64, rm: RegA64)
+        -> Result<(), Self::Error>;
+
+    /// [Reference](https://developer.arm.com/documentation/ddi0602/2021-12/Base-Instructions/SMSUBL--Signed-Multiply-Subtract-Long-?lang=en)
+    /// Signed Multiply-Subtract Long multiplies two 32-bit register values, 
+    /// subtracts the product from a 64-bit register value, and writes the 
+    /// result to the 64-bit destination register.
+    /// 
+    /// This instruction is used by the alias SMNEGL.
+    fn smsubl(&mut self, rd: RegA64, rn: RegA64, ra: RegA64, rm: RegA64)
+        -> Result<(), Self::Error>;
+
+    /// [Reference](https://developer.arm.com/documentation/ddi0602/2021-12/Base-Instructions/SMULH--Signed-Multiply-High-?lang=en)
+    /// Signed Multiply High multiplies two 64-bit register values, and writes 
+    /// bits[127:64] of the 128-bit result to the 64-bit destination register.
+    fn smulh(&mut self, rd: RegA64, rn: RegA64, ra: RegA64, rm: RegA64)
+        -> Result<(), Self::Error>;
+
+    /// [Reference](https://developer.arm.com/documentation/ddi0602/2021-12/Base-Instructions/UMADDL--Unsigned-Multiply-Add-Long-?lang=en)
+    /// Unsigned Multiply-Add Long multiplies two 32-bit register values, adds a 
+    /// 64-bit register value, and writes the result to the 64-bit destination 
+    /// register.
+    /// 
+    /// This instruction is used by the alias UMULL.
+    fn umaddl(&mut self, rd: RegA64, rn: RegA64, ra: RegA64, rm: RegA64)
+        -> Result<(), Self::Error>;
+
+    /// [Reference](https://developer.arm.com/documentation/ddi0602/2021-12/Base-Instructions/UMSUBL--Unsigned-Multiply-Subtract-Long-?lang=en)
+    /// Unsigned Multiply-Subtract Long multiplies two 32-bit register values, 
+    /// subtracts the product from a 64-bit register value, and writes the 
+    /// result to the 64-bit destination register.
+    /// 
+    /// This instruction is used by the alias UMNEGL.
+    fn umsubl(&mut self, rd: RegA64, rn: RegA64, ra: RegA64, rm: RegA64)
+        -> Result<(), Self::Error>;
+
+    /// [Reference](https://developer.arm.com/documentation/ddi0602/2021-12/Base-Instructions/UMULH--Unsigned-Multiply-High-?lang=en)
+    /// Unsigned Multiply High multiplies two 64-bit register values, and writes 
+    /// bits[127:64] of the 128-bit result to the 64-bit destination register.
+    fn umulh(&mut self, rd: RegA64, rn: RegA64, ra: RegA64, rm: RegA64)
+        -> Result<(), Self::Error>;
 }
 
 #[inline(always)]
@@ -1126,7 +1197,7 @@ fn data_processing_immediate<U: ArmV8aA64User>(user: &mut U, word: u32)
                 user.adr( rd, imm)
             } else {
                 user.adrp(rd, imm)
-            }.map_err(ErrorDissArmV8aA64::UserError)
+            }
         },
         // Add/subtract immediate
         0b010 => {
@@ -1145,7 +1216,7 @@ fn data_processing_immediate<U: ArmV8aA64User>(user: &mut U, word: u32)
                 0b110 => user.sub_imm_64( rd, rn, imm),
                 0b111 => user.subs_imm_64(rd, rn, imm),
                 _ => {unreachable!();},
-            }.map_err(ErrorDissArmV8aA64::UserError)
+            }
         },
         // Add/subtract immediate, with tags
         0b011 => {
@@ -1176,7 +1247,7 @@ fn data_processing_immediate<U: ArmV8aA64User>(user: &mut U, word: u32)
                 0b110 => user.and_imm_64(rd, rn, imms, immr),
                 0b111 => user.and_imm_64(rd, rn, imms, immr),
                 _ => {unreachable!()},
-            }.map_err(ErrorDissArmV8aA64::UserError)
+            }
         },
         // Move wide (immediate)
         0b101 => {
@@ -1198,7 +1269,7 @@ fn data_processing_immediate<U: ArmV8aA64User>(user: &mut U, word: u32)
                     );
                 },
 
-            }.map_err(ErrorDissArmV8aA64::UserError)
+            }
         },
         // Bitfield
         0b110 => {
@@ -1223,7 +1294,7 @@ fn data_processing_immediate<U: ArmV8aA64User>(user: &mut U, word: u32)
                         ErrorDissArmV8aA64::UnallocatedInstruction(word)
                     );
                 },
-            }.map_err(ErrorDissArmV8aA64::UserError)
+            }
         },
         // Extract
         0b111 => {
@@ -1248,10 +1319,10 @@ fn data_processing_immediate<U: ArmV8aA64User>(user: &mut U, word: u32)
                         ErrorDissArmV8aA64::UnallocatedInstruction(word)
                     );
                 },
-            }.map_err(ErrorDissArmV8aA64::UserError)
+            }
         },
         _ => {unreachable!();},
-    }
+    }.map_err(ErrorDissArmV8aA64::UserError)
 }
 
 #[inline(always)]
@@ -1306,7 +1377,7 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
                             ErrorDissArmV8aA64::UnallocatedInstruction(word)
                         );
                     },
-                }.map_err(ErrorDissArmV8aA64::UserError)
+                }
             } else {
                 // Data-processing (1 source)
                 let rn: RegA64 = word.extract_bits::<5, 9>().into();
@@ -1420,7 +1491,7 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
                             ErrorDissArmV8aA64::UnallocatedInstruction(word)
                         );
                     }
-                }.map_err(ErrorDissArmV8aA64::UserError)
+                }
             }
         },
         // Logical (shifted register)
@@ -1456,7 +1527,7 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
                 x => {
                     unreachable!("this value should be a 5bit integer {}", x);
                 }
-            }.map_err(ErrorDissArmV8aA64::UserError)
+            }
         },
         // Add/subtract (shifted register)
         (0, 0b1000 | 0b1010 | 0b1100 | 0b1110) => {
@@ -1479,7 +1550,7 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
                 x => {
                     unreachable!("this value should be a 3bit integer {}", x);
                 }
-            }.map_err(ErrorDissArmV8aA64::UserError)
+            }
         },
         // Add/subtract (extended register)
         (0, 0b1001 | 0b1011 | 0b1101 | 0b1111) => {
@@ -1510,7 +1581,7 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
                 x => {
                     unreachable!("this value should be a 3bit integer {}", x);
                 }
-            }.map_err(ErrorDissArmV8aA64::UserError)
+            }
         },
         (1, 0b0000) => {
             match word.extract_bits::<10, 15>() {
@@ -1533,7 +1604,7 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
                         x => {
                             unreachable!("this value should be a 3bit integer {}", x);
                         }
-                    }.map_err(ErrorDissArmV8aA64::UserError)
+                    }
                 },
                 // Rotate right into flags
                 0b000001 | 0b100001 => {
@@ -1550,7 +1621,6 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
                     }
 
                     user.rmif(mask, o2, rn, imm6)
-                        .map_err(ErrorDissArmV8aA64::UserError)
                 },
                 // Evaluate into flags
                 0b000010 | 0b010010 | 0b100010 | 0b110010 => {
@@ -1571,7 +1641,7 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
                                 ErrorDissArmV8aA64::UnallocatedInstruction(word)
                             );
                         }
-                    }.map_err(ErrorDissArmV8aA64::UserError)
+                    }
                 },
                 _ => {
                     return Err(
@@ -1626,7 +1696,7 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
                         );
                     }
                 }
-            }.map_err(ErrorDissArmV8aA64::UserError)
+            }
         },
         // Conditional select
         (1, 0b0100) => {
@@ -1661,15 +1731,43 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
                         ErrorDissArmV8aA64::UnallocatedInstruction(word)
                     );
                 }
-            }.map_err(ErrorDissArmV8aA64::UserError)
+            }
         },
         // Data-processing (3 source)
         (1, 0b1000 | 0b1001 | 0b1010 | 0b1011 
             | 0b1100 | 0b1101 | 0b1110 | 0b1111) => {
-            unimplemented!("TODO!:")
+            let sf_op54 = word.extract_bits::<29, 31>();
+            let op31 = word.extract_bits::<21, 23>();
+            let rm: RegA64 = word.extract_bits::<16, 20>().into();
+            let o0 = word.extract_bit::<15>();
+            let ra: RegA64 = word.extract_bits::<10, 14>().into();
+            let rn: RegA64 = word.extract_bits::<5, 9>().into();
+            let rd: RegA64 = word.extract_bits::<0, 4>().into();
+            
+            // combine opcode for faster match
+            let op =  (sf_op54 << 4) | (op31 << 1) | o0; 
+            match op {
+                0b0_00_000_0 => user.madd_32(rd, rn, ra, rm),
+                0b0_00_000_1 => user.msub_32(rd, rn, ra, rm),
+                
+                0b1_00_000_0 => user.madd_64(rd, rn, ra, rm),
+                0b1_00_000_1 => user.msub_64(rd, rn, ra, rm),
+
+                0b1_00_001_0 => user.smaddl(rd, rn, ra, rm),
+                0b1_00_001_1 => user.smsubl(rd, rn, ra, rm),
+                0b1_00_010_0 => user.smulh( rd, rn, ra, rm),
+                0b1_00_101_0 => user.umaddl(rd, rn, ra, rm),
+                0b1_00_101_1 => user.umsubl(rd, rn, ra, rm),
+                0b1_00_110_0 => user.umulh( rd, rn, ra, rm),
+                _ => {
+                    return Err(
+                        ErrorDissArmV8aA64::UnallocatedInstruction(word)
+                    );
+                }
+            }
         },
         _ => {unreachable!();}
-    }
+    }.map_err(ErrorDissArmV8aA64::UserError)
 }
 
 // <https://developer.arm.com/documentation/ddi0602/2021-12/Index-by-Encoding>
