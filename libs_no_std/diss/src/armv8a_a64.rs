@@ -1179,6 +1179,31 @@ pub trait ArmV8aA64User {
     /// bits[127:64] of the 128-bit result to the 64-bit destination register.
     fn umulh(&mut self, rd: RegA64, rn: RegA64, ra: RegA64, rm: RegA64)
         -> Result<(), Self::Error>;
+
+    /// [Reference](https://developer.arm.com/documentation/ddi0602/2021-12/Base-Instructions/B--Branch-?lang=en)
+    /// Branch causes an unconditional branch to a label at a PC-relative 
+    /// offset, with a hint that this is not a subroutine call or return.
+    fn b(&mut self, imm26: u32) -> Result<(), Self::Error>;
+
+    /// [Reference](https://developer.arm.com/documentation/ddi0602/2021-12/Base-Instructions/BL--Branch-with-Link-?lang=en)
+    /// Branch with Link branches to a PC-relative offset, setting the register 
+    /// X30 to PC+4. It provides a hint that this is a subroutine call.
+    fn bl(&mut self, imm26: u32) -> Result<(), Self::Error>;
+
+    /// [Reference](https://developer.arm.com/documentation/ddi0602/2021-12/Base-Instructions/B-cond--Branch-conditionally-?lang=en)
+    /// Branch conditionally to a label at a PC-relative offset, with a hint 
+    /// that this is not a subroutine call or return.
+    fn b_cond(&mut self, cond: Cond, imm19: u32) 
+        -> Result<(), Self::Error>;
+    
+    /// [Reference](https://developer.arm.com/documentation/ddi0602/2021-12/Base-Instructions/BC-cond--Branch-Consistent-conditionally-?lang=en)
+    /// Branch Consistent conditionally to a label at a PC-relative offset, with 
+    /// a hint that this branch will behave very consistently and is very 
+    /// unlikely to change direction.
+    fn bc_cond(&mut self, cond: Cond, imm19: u32) 
+        -> Result<(), Self::Error>;
+
+    
 }
 
 #[inline(always)]
@@ -1700,13 +1725,13 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
         },
         // Conditional select
         (1, 0b0100) => {
-            let sf_op = word.extract_bits::<30, 31>();
-            let s = word.extract_bit::<29>();
+            let sf_op  = word.extract_bits::<30, 31>();
+            let s      = word.extract_bit::<29>();
             let rm: RegA64 = word.extract_bits::<16, 20>().into();
             let cond: Cond = word.extract_bits::<12, 15>().into();
-            let op2 = word.extract_bits::<10, 11>();
-            let rn: RegA64 = word.extract_bits::<5, 9>().into();
-            let rd: RegA64 = word.extract_bits::<0, 4>().into();
+            let op2    = word.extract_bits::<10, 11>();
+            let rn: RegA64 = word.extract_bits::< 5,  9>().into();
+            let rd: RegA64 = word.extract_bits::< 0,  4>().into();
                         
             if s != 0 {
                 return Err(
@@ -1715,6 +1740,7 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
             }
 
             // composite match for denser match
+            //(sf, op, op2)
             let op = (sf_op << 2) | op2;
             match op {
                 0b0_0_00 => user.csel_32( rd, rn, cond, rm),
@@ -1770,6 +1796,68 @@ fn data_processing_register<U: ArmV8aA64User>(user: &mut U, word: u32)
     }.map_err(ErrorDissArmV8aA64::UserError)
 }
 
+#[inline(always)]
+/// <https://developer.arm.com/documentation/ddi0602/2021-12/Index-by-Encoding/Branches--Exception-Generating-and-System-instructions?lang=en>
+fn branches_exception_generating_and_system_instructions<U: ArmV8aA64User>
+    (user: &mut U, word: u32) -> Result<(), ErrorDissArmV8aA64<U::Error>> {
+    let op0 = word.extract_bits::<29, 21>();
+    let op1 = word.extract_bits::<12, 25>();
+
+    match op0 {
+        // Conditional branch (immediate)
+        0b010 => {
+            if word.extract_bit::<25>() != 0 {
+                return Err(
+                    ErrorDissArmV8aA64::UnallocatedInstruction(word)
+                );
+            }
+            let o1 = word.extract_bit::<24>();
+            let imm19 = word.extract_bits::<4, 23>();
+            let o0 = word.extract_bit::<4>();
+            let cond = word.extract_bits::<0, 3>().into();
+            
+            match (o1 << 1) | o0 {
+                0b0_0 => user.b_cond( cond, imm19),
+                0b0_1 => user.bc_cond(cond, imm19),
+                _ => {
+                    return Err(
+                        ErrorDissArmV8aA64::UnallocatedInstruction(word)
+                    );
+                }
+            }
+        },
+        // lot of random shit
+        0b110 => {
+            unimplemented!("TODO")
+        },
+        // Unconditional branch (immediate)
+        0b000 | 0b100 => {
+            let imm26 = word.extract_bits::<0, 25>();
+            if word.extract_bit::<31>() == 0 {
+                user.b(imm26)
+            } else {
+                user.bl(imm26)
+            }
+        },
+        0b001 | 0b101 => {
+            if word.extract_bit::<25>() == 0 {
+                // Compare and branch (immediate)
+                unimplemented!("TODO")
+            } else {
+                // Test and branch immediate
+                unimplemented!("TODO")
+            }
+        },
+        _ => {
+            return Err(
+                ErrorDissArmV8aA64::UnallocatedInstruction(word)
+            );
+        },
+    }.map_err(ErrorDissArmV8aA64::UserError)
+}
+
+
+
 // <https://developer.arm.com/documentation/ddi0602/2021-12/Index-by-Encoding>
 pub fn disassemble_armv8a_a64<U: ArmV8aA64User>(user: &mut U, word: u32) 
     -> Result<(), ErrorDissArmV8aA64<U::Error>> {
@@ -1790,7 +1878,7 @@ pub fn disassemble_armv8a_a64<U: ArmV8aA64User>(user: &mut U, word: u32)
         },
         // Branches, Exception Generating and System instructions
         0b1010 | 0b1011 => {
-            unimplemented!("TODO!: Branches, Exception Generating and System instructions")
+            branches_exception_generating_and_system_instructions(user, word)
         },
         // Loads and Stores
         0b0100 | 0b0110 | 0b1100 | 0b1110 => {
