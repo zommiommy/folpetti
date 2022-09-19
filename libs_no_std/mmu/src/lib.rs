@@ -12,15 +12,20 @@
 //! TODO: add a from_core_dump for memory
 //! Prob we need to to set coredump_filter to 255 to dump everything
 #![no_std]
+#![feature(atomic_from_mut)]
 #![feature(core_intrinsics)]
+#![feature(allocator_api)]
 
 extern crate alloc;
+
 use alloc::vec::Vec;
 use alloc::vec;
 use alloc::collections::BTreeMap;
+
 use core::intrinsics::unlikely;
 use core::ops::Range;
 
+mod pagetable;
 mod virtaddr;
 pub use virtaddr::*;
 mod bitmap;

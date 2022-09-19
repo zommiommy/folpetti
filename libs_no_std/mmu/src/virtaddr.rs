@@ -2,8 +2,8 @@ use core::ops::*;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-/// A strongly typed address **relative to the start of the current segment**
-pub struct VirtAddr(pub usize);
+/// A strongly typed guest address 
+pub struct VirtAddr(pub(crate) u64);
 
 impl Add<usize> for VirtAddr {
     type Output = VirtAddr;
@@ -18,3 +18,8 @@ impl Sub<usize> for VirtAddr {
         VirtAddr(self.0 - rhs)
     }
 }
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+/// A strongly typed host address
+pub struct HostAddr(pub(crate) usize);

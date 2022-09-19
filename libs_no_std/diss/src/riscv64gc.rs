@@ -5,7 +5,6 @@
 //! This should handle anything that targets `riscv64gc-unknown-linux-gnu`
 use crate::utils::*;
 
-
 /// 64-bit RISC-V registers
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(usize)]

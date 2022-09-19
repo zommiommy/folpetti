@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "libs_no_std/acpi",
+    "libs_no_std/bitfields",
     "libs_no_std/core_requirements",
     "libs_no_std/efi",
     "libs_no_std/elf",

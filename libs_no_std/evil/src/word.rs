@@ -101,4 +101,3 @@ impl_word!( u16,  i16);
 impl_word!( u32,  i32);
 impl_word!( u64,  i64);
 impl_word!(u128, i128);
-impl_word!( usize,  isize);
