@@ -1,5 +1,7 @@
 [workspace]
 members = [
+    "examples/test_fuzz",
+    "examples/test_emu_riscv",
     "libs_no_std/acpi",
     "libs_no_std/bitfields",
     "libs_no_std/core_requirements",

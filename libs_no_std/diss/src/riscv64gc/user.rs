@@ -1,589 +1,4 @@
-//! https://riscv.org/wp-content/uploads/2017/05/riscv-spec-v2.2.pdf
-//! https://msyksphinz-self.github.io/riscv-isadoc/html/index.html
-//! https://github.com/gamozolabs/fuzz_with_emus/blob/master/src/emulator.rs
-//! 
-//! This should handle anything that targets `riscv64gc-unknown-linux-gnu`
-use crate::utils::*;
-
-/// 64-bit RISC-V registers
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(usize)]
-pub enum Register {
-    Zero = 0,
-    /// Return Address, Caller Saved
-    Ra,
-    /// Stack Pointer, Callee Saved
-    Sp,
-    /// Global Pointer
-    Gp,
-    /// Thread Pointer
-    Tp,
-    /// Temp / alternate link register, Caller Saved
-    T0,
-    /// Temp, Caller Saved
-    T1,
-    /// Temp, Caller Saved
-    T2,
-    /// Saved registers / Frame Pointer, Callee Saved
-    S0,
-    /// Saved registers, Callee Saved
-    S1,
-    /// Function Arguments / return values, Caller Saved
-    A0,
-    /// Function Arguments / return values, Caller Saved
-    A1,
-    /// Function Arguments, Caller Saved
-    A2,
-    /// Function Arguments, Caller Saved
-    A3,
-    /// Function Arguments, Caller Saved
-    A4,
-    /// Function Arguments, Caller Saved
-    A5,
-    /// Function Arguments, Caller Saved
-    A6,
-    /// Function Arguments, Caller Saved
-    A7,
-    /// Saved register, Callee Saved
-    S2,
-    /// Saved registers, Callee Saved
-    S3,
-    /// Saved registers, Callee Saved
-    S4,
-    /// Saved registers, Callee Saved
-    S5,
-    /// Saved registers, Callee Saved
-    S6,
-    /// Saved registers, Callee Saved
-    S7,
-    /// Saved registers, Callee Saved
-    S8,
-    /// Saved registers, Callee Saved
-    S9,
-    /// Saved registers, Callee Saved
-    S10,
-    /// Saved registers, Callee Saved
-    S11,
-    /// Temp, Caller Saved
-    T3,
-    /// Temp, Caller Saved
-    T4,
-    /// Temp, Caller Saved
-    T5,
-    /// Temp, Caller Saved
-    T6,
-    /// Program Counter
-    Pc,
-}
-
-impl Register {
-    fn from_prime(val: u16) -> Register {
-        match val {
-            0b000 => Register::S0,
-            0b001 => Register::S1,
-            0b010 => Register::A0,
-            0b011 => Register::A1,
-            0b100 => Register::A2,
-            0b101 => Register::A3,
-            0b110 => Register::A4,
-            0b111 => Register::A5,
-            _ => panic!("Invalid prime register"),
-        }
-    } 
-}
-
-impl From<u32> for Register {
-    fn from(val: u32) -> Self {
-        // TODO!: do it properly
-        assert!(val < 33);
-        unsafe {
-            core::ptr::read_unaligned(&(val as usize) as
-                                      *const usize as *const Register)
-        }
-    }
-}
-/// 64-bit RISC-V float registers
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(usize)]
-pub enum FloatRegister {
-    /// FP temp, Caller Saved
-    FT0,
-    /// FP temp, Caller Saved
-    FT1,
-    /// FP temp, Caller Saved
-    FT2,
-    /// FP temp, Caller Saved
-    FT3, 
-    /// FP temp, Caller Saved
-    FT4,
-    /// FP temp, Caller Saved
-    FT5, 
-    /// FP temp, Caller Saved
-    FT6, 
-    /// FP temp, Caller Saved
-    FT7, 
-    /// FP saved registers, Callee Saved
-    FS0,
-    /// FP saved registers, Callee Saved
-    FS1,
-    /// FP Arguments / return values, Caller Saved
-    FA0,
-    /// FP Arguments / return values, Caller Saved
-    FA1,
-    /// FP Arguments, Caller Saved
-    FA2,
-    /// FP Arguments, Caller Saved
-    FA3,
-    /// FP Arguments, Caller Saved
-    FA4,
-    /// FP Arguments, Caller Saved
-    FA5,
-    /// FP Arguments, Caller Saved
-    FA6,
-    /// FP Arguments, Caller Saved
-    FA7,
-    /// FP saved registers, Callee Saved
-    FS2,
-    /// FP saved registers, Callee Saved
-    FS3,
-    /// FP saved registers, Callee Saved
-    FS4,
-    /// FP saved registers, Callee Saved
-    FS5,
-    /// FP saved registers, Callee Saved
-    FS6,
-    /// FP saved registers, Callee Saved
-    FS7,
-    /// FP saved registers, Callee Saved
-    FS8,
-    /// FP saved registers, Callee Saved
-    FS9,
-    /// FP saved registers, Callee Saved
-    FS10,
-    /// FP saved registers, Callee Saved
-    FS11,
-    /// FP temp, Caller Saved
-    FT8,
-    /// FP temp, Caller Saved
-    FT9,
-    /// FP temp, Caller Saved
-    FT10,
-    /// FP temp, Caller Saved
-    FT11,
-    /// Float Control Status Register
-    FCSR,
-}
-
-impl FloatRegister {
-    fn from_prime(val: u16) -> FloatRegister {
-        match val {
-            0b000 => FloatRegister::FS0,
-            0b001 => FloatRegister::FS1,
-            0b010 => FloatRegister::FA0,
-            0b011 => FloatRegister::FA1,
-            0b100 => FloatRegister::FA2,
-            0b101 => FloatRegister::FA3,
-            0b110 => FloatRegister::FA4,
-            0b111 => FloatRegister::FA5,
-            _ => panic!("Invalid prime float register"),
-        }
-    } 
-}
-
-impl From<u32> for FloatRegister {
-    fn from(val: u32) -> Self {
-        // TODO!: do it properly
-        assert!(val < 33);
-        unsafe {
-            core::ptr::read_unaligned(&(val as usize) as
-                                      *const usize as *const FloatRegister)
-        }
-    }
-}
-
-/// 64-bit RISC-V float rounding modes
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FloatRoundingMode {
-    /// Round to Nearest, ties to Even
-    RNE,
-    /// Round towards Zero
-    RTZ,
-    /// Round Down (torwards -inf)
-    RDN,
-    /// Round Up (towards +inf)
-    RUP,
-    /// Round to nearest, ties to Max Magnitude
-    RMM,
-    /// In instruction's `rm` field, selects dynamic rounding mode;
-    /// In Rounding Mode register, reserved
-    DYN,
-}
-
-impl From<u32> for FloatRoundingMode {
-    fn from(val: u32) -> Self {
-        match val {
-            0b000 => FloatRoundingMode::RNE,
-            0b001 => FloatRoundingMode::RTZ,
-            0b010 => FloatRoundingMode::RDN,
-            0b011 => FloatRoundingMode::RUP,
-            0b100 => FloatRoundingMode::RMM,
-            0b111 => FloatRoundingMode::DYN,
-            _ => unreachable!("Invalid rounding mode"),
-        }
-    }
-}
-
-/// An R-type instruction
-#[derive(Debug)]
-struct Rtype {
-    funct7: u32,
-    rs2:    u32,
-    rs1:    u32,
-    funct3: u32,
-    rd:     u32,
-}
-
-impl From<u32> for Rtype {
-    fn from(inst: u32) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b11);
-        Rtype {
-            funct7: (inst >> 25) & 0b1111111,
-            rs2:    (inst >> 20) & 0b11111,
-            rs1:    (inst >> 15) & 0b11111,
-            funct3: (inst >> 12) & 0b111,
-            rd:     (inst >>  7) & 0b11111,
-        }
-    }
-}
-
-/// An R4-type instruction
-#[derive(Debug)]
-struct R4type {
-    funct2: u32,
-    rs3:    u32,
-    rs2:    u32,
-    rs1:    u32,
-    funct3: u32,
-    rd:     u32,
-}
-
-impl From<u32> for R4type {
-    fn from(inst: u32) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b11);
-        R4type {
-            funct2: (inst >> 25) & 0b11,
-            rs3:    (inst >> 27) & 0b11111,
-            rs2:    (inst >> 20) & 0b11111,
-            rs1:    (inst >> 15) & 0b11111,
-            funct3: (inst >> 12) & 0b111,
-            rd:     (inst >>  7) & 0b11111,
-        }
-    }
-}
-
-/// An S-type instruction
-#[derive(Debug)]
-struct Stype {
-    imm:    i32,
-    rs2:    u32,
-    rs1:    u32,
-    funct3: u32,
-}
-
-impl From<u32> for Stype {
-    fn from(inst: u32) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b11);
-        let imm115 = (inst >> 25) & 0b1111111;
-        let imm40  = (inst >>  7) & 0b11111;
-
-        let imm = (imm115 << 5) | imm40;
-        let imm = ((imm as i32) << 20) >> 20;
-
-        Stype {
-            imm:    imm,
-            rs2:    (inst >> 20) & 0b11111,
-            rs1:    (inst >> 15) & 0b11111,
-            funct3: (inst >> 12) & 0b111,
-        }
-    }
-}
-
-/// A J-type instruction
-#[derive(Debug)]
-struct Jtype {
-    imm: i32,
-    rd:  u32,
-}
-
-impl From<u32> for Jtype {
-    fn from(inst: u32) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b11);
-        let imm20   = (inst >> 31) & 1;
-        let imm101  = (inst >> 21) & 0b1111111111;
-        let imm11   = (inst >> 20) & 1;
-        let imm1912 = (inst >> 12) & 0b11111111;
-
-        let imm = (imm20 << 20) | (imm1912 << 12) | (imm11 << 11) |
-            (imm101 << 1);
-        let imm = ((imm as i32) << 11) >> 11;
-
-        Jtype {
-            imm: imm,
-            rd:  (inst >> 7) & 0b11111,
-        }
-    }
-}
-
-/// A B-type instruction
-#[derive(Debug)]
-struct Btype {
-    imm:    i32,
-    rs2:    u32,
-    rs1:    u32,
-    funct3: u32,
-}
-
-impl From<u32> for Btype {
-    fn from(inst: u32) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b11);
-        let imm12  = (inst >> 31) & 1;
-        let imm105 = (inst >> 25) & 0b111111;
-        let imm41  = (inst >>  8) & 0b1111;
-        let imm11  = (inst >>  7) & 1;
-
-        let imm = (imm12 << 12) | (imm11 << 11) |(imm105 << 5) | (imm41 << 1);
-        let imm = ((imm as i32) << 19) >> 19;
-
-        Btype {
-            imm:    imm,
-            rs2:    (inst >> 20) & 0b11111,
-            rs1:    (inst >> 15) & 0b11111,
-            funct3: (inst >> 12) & 0b111,
-        }
-    }
-}
-
-/// An I-type instruction
-#[derive(Debug)]
-struct Itype {
-    imm:    i32,
-    rs1:    u32,
-    funct3: u32,
-    rd:     u32,
-}
-
-impl From<u32> for Itype {
-    fn from(inst: u32) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b11);
-        let imm = (inst as i32) >> 20;
-        Itype {
-            imm:    imm,
-            rs1:    (inst >> 15) & 0b11111,
-            funct3: (inst >> 12) & 0b111,
-            rd:     (inst >>  7) & 0b11111,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct Utype {
-    imm: i32,
-    rd:  u32,
-}
-
-impl From<u32> for Utype {
-    fn from(inst: u32) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b11);
-        Utype {
-            imm: (inst & !0xfff) as i32,
-            rd:  (inst >> 7) & 0b11111,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct CRtype {
-    funct4: u16,
-    rd_rs1: u16,
-    rs2:    u16,
-}
-
-impl From<u16> for CRtype {
-    fn from(inst: u16) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b00);
-        CRtype {
-            funct4: (inst >> 12) & 0b1111,
-            rd_rs1: (inst >>  7) & 0b11111,
-            rs2:    (inst >>  2) & 0b11111,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct CItype {
-    funct3: u16,
-    imm2:   u16,
-    rd_rs1: u16,
-    imm1:   u16,
-}
-
-impl From<u16> for CItype {
-    fn from(inst: u16) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b00);
-        CItype {
-            funct3: (inst >> 13) & 0b111,
-            imm2:   (inst >> 12) & 0b1,
-            rd_rs1: (inst >>  7) & 0b11111,
-            imm1:   (inst >>  2) & 0b11111,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct CSStype {
-    funct3: u16,
-    imm:    u16,
-    rs2:    u16,
-}
-
-impl From<u16> for CSStype {
-    fn from(inst: u16) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b00);
-        CSStype {
-            funct3: (inst >> 13) & 0b111,
-            imm:    (inst >>  7) & 0b111111,
-            rs2:    (inst >>  2) & 0b11111,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct CIWtype {
-    funct3:   u16,
-    imm:      u16,
-    rd_prime: u16,
-}
-
-impl From<u16> for CIWtype {
-    fn from(inst: u16) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b00);
-        CIWtype {
-            funct3:   (inst >> 13) & 0b111,
-            imm:      (inst >>  5) & 0b11111111,
-            rd_prime: (inst >>  2) & 0b111,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct CLtype {
-    funct3:    u16,
-    imm2:      u16,
-    rs1_prime: u16,
-    imm1:      u16,
-    rd_prime:  u16,
-}
-
-impl From<u16> for CLtype {
-    fn from(inst: u16) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b00);
-        CLtype {
-            funct3:    (inst >> 13) & 0b111,
-            imm2:      (inst >>  10) & 0b111,
-            rs1_prime: (inst >>  7) & 0b111,
-            imm1:      (inst >>  5) & 0b11,
-            rd_prime:  (inst >>  2) & 0b111,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct CStype {
-    funct3:    u16,
-    imm2:      u16,
-    rs1_prime: u16,
-    imm1:      u16,
-    rs2_prime:  u16,
-}
-
-impl From<u16> for CStype {
-    fn from(inst: u16) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b00);
-        CStype {
-            funct3:    (inst >> 13) & 0b111,
-            imm2:      (inst >> 10) & 0b111,
-            rs1_prime: (inst >>  7) & 0b111,
-            imm1:      (inst >>  5) & 0b11,
-            rs2_prime: (inst >>  2) & 0b111,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct CAtype {
-    funct6:       u16,
-    rd_rs1_prime: u16,
-    funct2:       u16,
-    rs2_prime:    u16,
-}
-
-impl From<u16> for CAtype {
-    fn from(inst: u16) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b00);
-        CAtype {
-            funct6:       (inst >> 10) & 0b111111,
-            rd_rs1_prime: (inst >>  7) & 0b111,
-            funct2:       (inst >>  5) & 0b11,
-            rs2_prime:    (inst >>  2) & 0b111,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct CBtype {
-    funct3:    u16,
-    offset2:   u16,
-    rs1_prime: u16,
-    offset1:   u16,
-}
-
-impl From<u16> for CBtype {
-    fn from(inst: u16) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b00);
-        CBtype {
-            funct3:    (inst >> 13) & 0b111,
-            offset2:   (inst >> 10) & 0b111,
-            rs1_prime: (inst >>  7) & 0b111,
-            offset1:   (inst >>  2) & 0b11111,
-        }
-    }
-}
-
-#[derive(Debug)]
-struct CJtype {
-    funct3:      u16,
-    jump_target: u16,
-}
-
-impl From<u16> for CJtype {
-    fn from(inst: u16) -> Self {
-        debug_assert_eq!(inst & 0b11, 0b00);
-        CJtype {
-            funct3:      (inst >> 13) & 0b111,
-            jump_target: (inst >> 2) & 0b1111111111,
-        }
-    }
-}
-
-/// Helper function to build compact integers
-fn compose_imms_53_76(imm1: u16, imm2: u16) -> u16 {
-    (imm1 << 6) | (imm2 << 3)
-}
-
-/// Helper function to build compact integers
-fn compose_imms_53_2_or_6(imm1: u16, imm2: u16) -> u16 {
-    ((imm1 & 0b1) << 6) | (imm2 << 3) | (imm1 & 0b10) 
-}
+use super::{Register, FloatRegister, FloatRoundingMode};
 
 /// Instructions skipped: `uret, srtet, mret, wfi, sfence.vma`
 /// Extensions Skipped: `RV32A, RV64A` do I need atomic right now?
@@ -591,7 +6,7 @@ fn compose_imms_53_2_or_6(imm1: u16, imm2: u16) -> u16 {
 /// 
 /// Compact instructions will receive already translated registers
 /// so I can implement it once.
-pub trait RV64GUser<T> {
+pub trait RV64GCUser<T> {
     type Error;
 
     /// # Load Upper Immediate (RV32I)
@@ -601,7 +16,7 @@ pub trait RV64GUser<T> {
     /// filling in the lowest 12 bits with zeros.
     /// 
     /// `x[rd] = sext(immediate[31:12] << 12)`
-    fn lui(&mut self, rd: Register, imm: i32) -> Result<T, Self::Error>;
+    fn lui(&mut self, rd: Register, imm: u32) -> Result<T, Self::Error>;
 
     /// # Add Upper Immediate to PC (RV32I)
     /// 
@@ -611,7 +26,7 @@ pub trait RV64GUser<T> {
     /// register rd.
     /// 
     /// `x[rd] = pc + sext(immediate[31:12] << 12)`
-    fn auipc(&mut self, rd: Register, imm: u64) -> Result<T, Self::Error>;
+    fn auipc(&mut self, rd: Register, imm: u32) -> Result<T, Self::Error>;
 
     /// # Add Immediate (RV32I)
     /// 
@@ -621,7 +36,7 @@ pub trait RV64GUser<T> {
     /// pseudo-instruction.
     /// 
     /// `x[rd] = x[rs1] + sext(immediate)`
-    fn addi(&mut self, rd: Register, rs1: Register, imm: u64) 
+    fn addi(&mut self, rd: Register, rs1: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Set Less Than Immediate (RV32I)
@@ -631,7 +46,7 @@ pub trait RV64GUser<T> {
     /// is written to rd.
     /// 
     /// `x[rd] = x[rs1] <s sext(immediate)`
-    fn slti(&mut self, rd: Register, rs1: Register, imm: u64) 
+    fn slti(&mut self, rd: Register, rs1: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Set Less Than Immediate Unsigned (RV32I)
@@ -641,7 +56,7 @@ pub trait RV64GUser<T> {
     /// to rd.
     /// 
     /// `x[rd] = x[rs1] <u sext(immediate)`
-    fn sltiu(&mut self, rd: Register, rs1: Register, imm: u64)
+    fn sltiu(&mut self, rd: Register, rs1: Register, imm: u32)
         -> Result<T, Self::Error>;
 
     /// # Xor Immediate (RV32I)
@@ -652,7 +67,7 @@ pub trait RV64GUser<T> {
     /// register rs1(assembler pseudo-instruction NOT rd, rs)
     /// 
     /// `x[rd] = x[rs1] ^ sext(immediate)`
-    fn xori(&mut self, rd: Register, rs1: Register, imm: u64) 
+    fn xori(&mut self, rd: Register, rs1: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Or Immediate (RV32I)
@@ -661,7 +76,7 @@ pub trait RV64GUser<T> {
     /// immediate and place the result in rd
     /// 
     /// `x[rd] = x[rs1] | sext(immediate)`
-    fn ori(&mut self, rd: Register, rs1: Register, imm: u64) 
+    fn ori(&mut self, rd: Register, rs1: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # And Immediate (RV32I)
@@ -670,7 +85,7 @@ pub trait RV64GUser<T> {
     /// immediate and place the result in rd
     /// 
     /// `x[rd] = x[rs1] & sext(immediate)`
-    fn andi(&mut self, rd: Register, rs1: Register, imm: u64) 
+    fn andi(&mut self, rd: Register, rs1: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Shift Left Logical Immediate (RV32I)
@@ -792,26 +207,6 @@ pub trait RV64GUser<T> {
     fn and(&mut self, rd: Register, rs1: Register, rs2: Register) 
         -> Result<T, Self::Error>;
 
-    /// # Fence (RV32I)
-    /// TODO!: check args
-    /// 
-    /// Used to order device I/O and memory accesses as viewed by other RISC-V 
-    /// harts and external devices or coprocessors.
-    /// Any combination of device input (I), device output (O), memory reads (R)
-    /// , and memory writes (W) may be ordered with respect to any combination 
-    /// of the same.
-    /// Informally, no other RISC-V hart or external device can observe any 
-    /// operation in the successor set following a FENCE before any operation in
-    /// the predecessor set preceding the FENCE.
-    fn fence(&mut self) -> Result<T, Self::Error>;
-
-    /// # Fence Instructions (RV32Zifencei)
-    /// TODO!: check args
-    /// 
-    /// Provides explicit synchronization between writes to instruction memory 
-    /// and instruction fetches on the same hart.
-    fn fence_i(&mut self) -> Result<T, Self::Error>;
-
     /// # Atomic Read / Write CSR (RV32Zicsr)
     /// 
     /// Atomically swaps values in the CSRs and integer registers.
@@ -880,22 +275,6 @@ pub trait RV64GUser<T> {
     /// `t = CSRs[csr]; CSRs[csr] = t &∼zimm; x[rd] = t`
     fn csrrci(&mut self, rd: Register, zimm: u8, offset: u32) 
         -> Result<T, Self::Error>;
-
-    /// # ECall (RV32I)
-    /// 
-    /// Make a request to the supporting execution environment.
-    /// When executed in U-mode, S-mode, or M-mode, it generates an 
-    /// environment-call-from-U-mode exception, environment-call-from-S-mode 
-    /// exception, or environment-call-from-M-mode exception, respectively, and 
-    /// performs no other operation.
-    fn ecall(&mut self) -> Result<T, Self::Error>;
-
-    /// # EBreak (RV32I)
-    /// 
-    /// Used by debuggers to cause control to be transferred back to a debugging 
-    /// environment.
-    /// It generates a breakpoint exception and performs no other operation.
-    fn ebreak(&mut self) -> Result<T, Self::Error>;
 
     /// # Load Byte (RV32I)
     /// 
@@ -989,7 +368,7 @@ pub trait RV64GUser<T> {
     /// Jump to address and place return address in rd.
     /// 
     /// `x[rd] = pc+4; pc += sext(offset)`
-    fn jal(&mut self, imm: u64) -> Result<T, Self::Error>;
+    fn jal(&mut self, rd: Register, imm: u64) -> Result<T, Self::Error>;
 
     /// # Jump and link in relative (RV32I)
     /// 
@@ -2001,12 +1380,6 @@ pub trait RV64GUser<T> {
     fn c_sd(&mut self, rs1: Register, rs2: FloatRegister, uimm: u16) 
         -> Result<T, Self::Error>;
 
-    /// # Compact NOP (RV32C)
-    /// 
-    /// Does not change any user-visible state, except for advancing the pc.
-    /// 
-    fn c_nop(&mut self) -> Result<T, Self::Error>;
-
     /// # Compact Add Immediate (RV32C)
     /// 
     /// Add the non-zero sign-extended 6-bit immediate to the value in register 
@@ -2155,7 +1528,7 @@ pub trait RV64GUser<T> {
     /// Unconditional control transfer.
     /// 
     /// `pc += sext(offset)`
-    fn c_j(&mut self, imm: u16) -> Result<T, Self::Error>;
+    fn c_j(&mut self, imm: i16) -> Result<T, Self::Error>;
 
     /// # Compact Jump (RV64C)
     /// 
@@ -2238,11 +1611,6 @@ pub trait RV64GUser<T> {
     /// `x[rd] = x[rs2]`
     fn c_mv(&mut self, rs1: Register, rs2: Register) -> Result<T, Self::Error>;
 
-    /// # Compact Ebreak (RV32C)
-    /// 
-    /// Cause control to be transferred back to the debugging environment.
-    fn c_ebreak(&mut self) -> Result<T, Self::Error>;
-
     /// # Compact Jump And Link Register (RV32C)
     /// 
     /// Jump to address and place return address in rd.
@@ -2294,684 +1662,53 @@ pub trait RV64GUser<T> {
     /// 
     /// `M[x[2] + uimm][63:0] = x[rs2]`
     fn c_sdsp(&mut self, rs2: FloatRegister, uimm: u8) -> Result<T, Self::Error>;
-}
 
-/// Disassemble a u32 instruction and call the visitor `User` with the relative
-/// Instruction
-pub fn diss_riscv64gc<T, User: RV64GUser<T>>(user: &mut User, inst: u32) 
-    -> Result<T, User::Error> {
 
-    // decode the instruction length prefix
-    match inst & 0b11 {
-        // 4 bytes instruction
-        0b11 => diss_riscv64gc_4b_inst(user, inst),
-        // 2 bytes instruction (Compact) quadrant 0
-        0b00 => {
-            let inst = inst as u16;
-            let funct3 = (inst >> 12) & 0b111;
-            match funct3 {
-                0b000 => {
-                    let CIWtype{
-                        funct3, imm, rd_prime
-                    } = CIWtype::from(inst);
-                    if imm == 0 {
-                        panic!("Illegal instruction");
-                    }
-                    user.c_addi4spn(Register::from_prime(rd_prime), imm)
-                }
-                0b001 => {
-                    let CLtype {
-                        funct3, imm2, rs1_prime, imm1, rd_prime,
-                    } = CLtype::from(inst);
-                    user.c_fld(
-                        Register::from_prime(rd_prime),
-                        Register::from_prime(rs1_prime),
-                        compose_imms_53_76(imm1, imm2),
-                    )
-                }
-                0b010 => {
-                    let CLtype {
-                        funct3, imm2, rs1_prime, imm1, rd_prime,
-                    } = CLtype::from(inst);
-                    user.c_lw(
-                        Register::from_prime(rd_prime),
-                        Register::from_prime(rs1_prime),
-                        compose_imms_53_2_or_6(imm1, imm2),
-                    )
-                }
-                0b011 => {
-                    let CLtype {
-                        funct3, imm2, rs1_prime, imm1, rd_prime,
-                    } = CLtype::from(inst);
-                    user.c_ld(
-                        Register::from_prime(rd_prime),
-                        FloatRegister::from_prime(rs1_prime),
-                        compose_imms_53_76(imm1, imm2),
-                    )
-                }
-                0b100 => unimplemented!("Reserved Compact Instruction"),
-                0b101 => {
-                    let CStype {
-                        funct3, imm2, rs1_prime, imm1, rs2_prime,
-                    } = CStype::from(inst);
-                    user.c_fsd(
-                        Register::from_prime(rs1_prime),
-                        FloatRegister::from_prime(rs2_prime),
-                        compose_imms_53_76(imm1, imm2),
-                    )
-                }
-                0b110 => {
-                    let CStype {
-                        funct3, imm2, rs1_prime, imm1, rs2_prime,
-                    } = CStype::from(inst);
-                    user.c_sw(
-                        Register::from_prime(rs1_prime),
-                        Register::from_prime(rs2_prime),
-                        compose_imms_53_2_or_6(imm1, imm2),
-                    )
-                }
-                0b111 => {
-                    let CStype {
-                        funct3, imm2, rs1_prime, imm1, rs2_prime,
-                    } = CStype::from(inst);
-                    user.c_sd(
-                        Register::from_prime(rs1_prime),
-                        FloatRegister::from_prime(rs2_prime),
-                        compose_imms_53_2_or_6(imm1, imm2),
-                    )
-                }
-                _ => unreachable!(),
-            }
-        },
-        // 2 bytes instruction (Compact) quadrant 1
-        0b01 => {
-            let inst = inst as u16;
-            let funct3 = (inst >> 12) & 0b111;
-            unimplemented!("TODO")
-        },
-        // 2 bytes instruction (Compact) quadrant 2
-        0b10 => {
-            let inst = inst as u16;
-            let funct3 = (inst >> 12) & 0b111;
-            unimplemented!("TODO")
-        },
-        _ => unreachable!(),
-    }
-}
 
-fn diss_riscv64gc_4b_inst<T, User: RV64GUser<T>>(user: &mut User, inst: u32) 
-    -> Result<T, User::Error> {
-    // Extract the opcode from the instruction
-    let opcode = inst & 0b1111111;
+    /// # Fence (RV32I)
+    /// TODO!: check args
+    /// 
+    /// Used to order device I/O and memory accesses as viewed by other RISC-V 
+    /// harts and external devices or coprocessors.
+    /// Any combination of device input (I), device output (O), memory reads (R)
+    /// , and memory writes (W) may be ordered with respect to any combination 
+    /// of the same.
+    /// Informally, no other RISC-V hart or external device can observe any 
+    /// operation in the successor set following a FENCE before any operation in
+    /// the predecessor set preceding the FENCE.
+    fn fence(&mut self) -> Result<T, Self::Error>;
 
-    match opcode {
-        0b0110111 => {
-            let Utype{imm, rd} = Utype::from(inst);
-            user.lui(rd.into(), imm)
-        }
-        0b0010111 => {
-            let Utype{imm, rd} = Utype::from(inst);
-            user.auipc(rd.into(), imm as i64 as u64)
-        }
-        0b1101111 => {
-            let Jtype{imm, rd} = Jtype::from(inst);
-            user.jal(imm as i64 as u64)
-        }
-        0b1100111 => {
-            let Itype{
-                imm, rs1, funct3, rd,
-            } = Itype::from(inst);
-            match funct3 {
-                0b000 => {
-                    user.jalr(rd.into(), imm as i64 as u64)
-                }
-                _ => unimplemented!("Unexpected 0b1100111"),
-            }
-        }
-        0b1100011 => {
-            let Btype {
-                imm, rs2, rs1, funct3,
-            } = Btype::from(inst);
-            match funct3 {
-                0b000 => user.beq( rs1.into(), rs2.into(), imm as i64 as u64),
-                0b001 => user.bne( rs1.into(), rs2.into(), imm as i64 as u64),
-                0b100 => user.blt( rs1.into(), rs2.into(), imm as i64 as u64),
-                0b101 => user.bge( rs1.into(), rs2.into(), imm as i64 as u64),
-                0b110 => user.bltu(rs1.into(), rs2.into(), imm as i64 as u64),
-                0b111 => user.bgeu(rs1.into(), rs2.into(), imm as i64 as u64),
-                _ => unimplemented!("Unexpected 0b1100011"),
-            }
-        }
-        0b0000111 => {
-            let Itype{
-                imm, rs1, funct3, rd,
-            } = Itype::from(inst);
+    /// # Fence Instructions (RV32Zifencei)
+    /// TODO!: check args
+    /// 
+    /// Provides explicit synchronization between writes to instruction memory 
+    /// and instruction fetches on the same hart.
+    fn fence_i(&mut self) -> Result<T, Self::Error>;
 
-            match funct3 {
-                0b010 => user.flw(rd.into(), rs1.into(), imm),
-                0b011 => user.fld(rd.into(), rs1.into(), imm),
-                _ => unimplemented!("Unexpected 0b0000111"),
-            }
-        }
-        0b0100111 => {
-            let Stype {
-                imm, rs2, rs1, funct3,
-            } = Stype::from(inst);
+    /// # ECall (RV32I)
+    /// 
+    /// Make a request to the supporting execution environment.
+    /// When executed in U-mode, S-mode, or M-mode, it generates an 
+    /// environment-call-from-U-mode exception, environment-call-from-S-mode 
+    /// exception, or environment-call-from-M-mode exception, respectively, and 
+    /// performs no other operation.
+    fn ecall(&mut self) -> Result<T, Self::Error>;
 
-            match funct3 {
-                0b010 => user.fsw(rs1.into(), rs2.into(), imm),
-                0b011 => user.fsd(rs1.into(), rs2.into(), imm),
-                _ => unimplemented!("Unexpected 0b0000111"),
-            }
-        }
-        0b1000011 => {
-            let R4type {
-                funct2, rs3, rs2, rs1, funct3, rd,
-            } = R4type::from(inst);
-            match funct2 {
-                00 => user.fmadd_s(
-                    rd.into(), rs1.into(), rs2.into(), 
-                    rs3.into(), funct3.into(),
-                ),
-                01 => user.fmadd_d(
-                    rd.into(), rs1.into(), rs2.into(), 
-                    rs3.into(), funct3.into(),
-                ),
-                _ => unimplemented!("Unexpected 0b1000011"),
-            }
-        }
-        0b1000111 => {
-            let R4type {
-                funct2, rs3, rs2, rs1, funct3, rd,
-            } = R4type::from(inst);
-            match funct2 {
-                00 => user.fmsub_s(
-                    rd.into(), rs1.into(), rs2.into(), 
-                    rs3.into(), funct3.into(),
-                ),
-                01 => user.fmsub_d(
-                    rd.into(), rs1.into(), rs2.into(), 
-                    rs3.into(), funct3.into(),
-                ),
-                _ => unimplemented!("Unexpected 0b1000111"),
-            }
-        }
-        0b1001011 => {
-            let R4type {
-                funct2, rs3, rs2, rs1, funct3, rd,
-            } = R4type::from(inst);
-            match funct2 {
-                00 => user.fnmsub_s(
-                    rd.into(), rs1.into(), rs2.into(),
-                    rs3.into(), funct3.into(),
-                ),
-                01 => user.fnmsub_d(
-                    rd.into(), rs1.into(), rs2.into(),
-                    rs3.into(), funct3.into(),
-                ),
-                _ => unimplemented!("Unexpected 0b1001011"),
-            }
-        }
-        0b1001111 => {
-            let R4type {
-                funct2, rs3, rs2, rs1, funct3, rd,
-            } = R4type::from(inst);
-            match funct2 {
-                00 => user.fnmadd_s(
-                    rd.into(), rs1.into(), rs2.into(), 
-                    rs3.into(), funct3.into(),
-                ),
-                01 => user.fnmadd_d(
-                    rd.into(), rs1.into(), rs2.into(), 
-                    rs3.into(), funct3.into(),
-                ),
-                _ => unimplemented!("Unexpected 0b1001111"),
-            }
-        }
-        0b1010011 => {
-            let Rtype{
-                funct7, rs2, rs1, funct3, rd,
-            } = Rtype::from(inst);
-            match funct7 {
-                0b0000000 => user.fadd_s(
-                    rd.into(), rs1.into(), 
-                    rs2.into(), funct3.into(),
-                ),
-                0b0000001 => user.fadd_d(
-                    rd.into(), rs1.into(), 
-                    rs2.into(), funct3.into(),
-                ),
-                0b0000100 => user.fsub_s(
-                    rd.into(), rs1.into(), 
-                    rs2.into(), funct3.into(),
-                ),
-                0b0000100 => user.fsub_d(
-                    rd.into(), rs1.into(), 
-                    rs2.into(), funct3.into(),
-                ),
-                0b0001000 => user.fmul_s(
-                    rd.into(), rs1.into(), 
-                    rs2.into(), funct3.into(),
-                ),
-                0b0001001 => user.fmul_d(
-                    rd.into(), rs1.into(), 
-                    rs2.into(), funct3.into(),
-                ),
-                0b0001100 => user.fdiv_s(
-                    rd.into(), rs1.into(), 
-                    rs2.into(), funct3.into(),
-                ),
-                0b0001101 => user.fdiv_d(
-                    rd.into(), rs1.into(), 
-                    rs2.into(), funct3.into(),
-                ),
-                0b0101100 => {
-                    assert_eq!(rs2, 0b00000);
-                    user.fsqrt_s(
-                        rd.into(), rs1.into(), 
-                        funct3.into(),
-                    )
-                },
-                0b0101101 => {
-                    assert_eq!(rs2, 0b00000);
-                    user.fsqrt_d(
-                        rd.into(), rs1.into(), 
-                        funct3.into(),
-                    )
-                },
-                0b0010000 => {
-                    match funct3 {
-                        0b000 => user.fsgnj_s(
-                            rd.into(), rs1.into(), rs2.into()
-                        ),
-                        0b001 => user.fsgnjn_s(
-                            rd.into(), rs1.into(), rs2.into()
-                        ),
-                        0b010 => user.fsgnjx_s(
-                            rd.into(), rs1.into(), rs2.into()
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b0010000"),
-                    }
-                }
-                0b0010001 => {
-                    match funct3 {
-                        0b000 => user.fsgnj_d(
-                            rd.into(), rs1.into(), rs2.into()
-                        ),
-                        0b001 => user.fsgnjn_d(
-                            rd.into(), rs1.into(), rs2.into()
-                        ),
-                        0b010 => user.fsgnjx_d(
-                            rd.into(), rs1.into(), rs2.into()
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b0010001"),
-                    }
-                }
-                0b0010100 => {
-                    match funct3 {
-                        0b000 => user.fmin_s(
-                            rd.into(), rs1.into(), rs2.into(),
-                        ),
-                        0b001 => user.fmax_s(
-                            rd.into(), rs1.into(), rs2.into(),
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b0010100"),
-                    }
-                }
-                0b0010101 => {
-                    match funct3 {
-                        0b000 => user.fmin_d(
-                            rd.into(), rs1.into(), rs2.into(),
-                        ),
-                        0b001 => user.fmax_d(
-                            rd.into(), rs1.into(), rs2.into(),
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b0010100"),
-                    }
-                }
-                0b0100000 => {
-                    match rs2 {
-                        0b00001 => user.fcvt_s_d(
-                            rd.into(), rs1.into()
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b0100000"),
-                    }
-                }
-                0b0100001 => {
-                    match rs2 {
-                        0b00000 => user.fcvt_d_s(
-                            rd.into(), rs1.into()
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b0100001"),
-                    }
-                }
-                0b1100000 => {
-                    match rs2 {
-                        0b00000 => user.fcvt_w_s(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        0b00001 => user.fcvt_wu_s(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        0b00010 => user.fcvt_l_s(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        0b00011 => user.fcvt_lu_s(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b1100000"),
-                    }
-                }
-                0b1100001 => {
-                    match rs2 {
-                        0b00000 => user.fcvt_w_d(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        0b00001 => user.fcvt_wu_d(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        0b00010 => user.fcvt_l_d(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        0b00011 => user.fcvt_lu_d(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b1100000"),
-                    }
-                }
-                0b1110000 => {
-                    match (rs2, funct3) {
-                        (0b00000, 0b000) => user.fmv_x_w(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        (0b00000, 0b001) => user.fclass_s(
-                            rd.into(), rs1.into(),
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b1110000"),
-                    }
-                }
-                0b1110001 => {
-                    match (rs2, funct3) {
-                        (0b00000, 0b000) => user.fmv_x_d(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        (0b00000, 0b001) => user.fclass_d(
-                            rd.into(), rs1.into(),
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b1110001"),
-                    }
-                }
-                0b1010000 => {
-                    match funct3 {
-                        0b010 => user.feq_s(
-                            rd.into(), rs1.into(), rs2.into(),
-                        ),
-                        0b001 => user.flt_s(
-                            rd.into(), rs1.into(), rs2.into(),
-                        ),
-                        0b000 => user.fle_s(
-                            rd.into(), rs1.into(), rs2.into(),
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b1010000"),
-                    }
-                }
-                0b1010001 => {
-                    match funct3 {
-                        0b010 => user.feq_d(
-                            rd.into(), rs1.into(), rs2.into(),
-                        ),
-                        0b001 => user.flt_d(
-                            rd.into(), rs1.into(), rs2.into(),
-                        ),
-                        0b000 => user.fle_d(
-                            rd.into(), rs1.into(), rs2.into(),
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b1010000"),
-                    }
-                }
-                0b1101000 => {
-                    match rs2 {
-                        0b00000 => user.fcvt_s_w(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        0b00001 => user.fcvt_s_wu(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        0b00010 => user.fcvt_s_l(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        0b00011 => user.fcvt_s_lu(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b1101000"),
-                    }
-                }
-                0b1101001 => {
-                    match rs2 {
-                        0b00000 => user.fcvt_d_w(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        0b00001 => user.fcvt_d_wu(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        0b00010 => user.fcvt_d_l(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        0b00011 => user.fcvt_d_lu(
-                            rd.into(), rs1.into(),
-                            funct3.into(),
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b1101000"),
-                    }
-                }
-                0b1111000 => {
-                    match (rs2, funct3) {
-                        (0b00000, 0b000) => user.fmv_w_x(
-                            rd.into(), rs1.into(),
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b1111000"),
-                    }
-                }
-                0b1111001 => {
-                    match (rs2, funct3) {
-                        (0b00000, 0b000) => user.fmv_d_x(
-                            rd.into(), rs1.into(), funct3.into(),
-                        ),
-                        _ => unimplemented!("Unexpected 0b1010011 - 0b1111001"),
-                    }
-                }
-            }
-        }
-        0b0000011 => {
-            let Itype{
-                imm, rs1, funct3, rd,
-            } = Itype::from(inst);
+    /// # EBreak (RV32I)
+    /// 
+    /// Used by debuggers to cause control to be transferred back to a debugging 
+    /// environment.
+    /// It generates a breakpoint exception and performs no other operation.
+    fn ebreak(&mut self) -> Result<T, Self::Error>;
 
-            match funct3 {
-                0b000 => user.lb( rd.into(), imm as i64 as u64),
-                0b001 => user.lh( rd.into(), imm as i64 as u64),
-                0b010 => user.lw( rd.into(), imm as i64 as u64),
-                0b011 => user.ld( rd.into(), imm as i64 as u64),
-                0b100 => user.lbu(rd.into(), imm as i64 as u64),
-                0b101 => user.lhu(rd.into(), imm as i64 as u64),
-                0b110 => user.lwu(rd.into(), imm as i64 as u64),
-                _ => unimplemented!("Unexpected 0b0000011"),
-            }
-        }
-        0b0100011 => {
-            let Stype {
-                imm, rs2, rs1, funct3,
-            } = Stype::from(inst);
+    /// # Compact NOP (RV32C)
+    /// 
+    /// Does not change any user-visible state, except for advancing the pc.
+    /// 
+    fn c_nop(&mut self) -> Result<T, Self::Error>;
 
-            match funct3 {
-                0b000 => user.sb(rs1.into(), rs2.into(), imm as i64 as u64),
-                0b001 => user.sh(rs1.into(), rs2.into(), imm as i64 as u64),
-                0b010 => user.sw(rs1.into(), rs2.into(), imm as i64 as u64),
-                0b011 => user.sd(rs1.into(), rs2.into(), imm as i64 as u64),
-                _ => unimplemented!("Unexpected 0b0100011"),
-            }
-        }
-        0b0010011 => {
-            let Itype{
-                imm, rs1, funct3, rd,
-            } = Itype::from(inst);
-
-            match funct3 {
-                0b000 => user.addi( rd.into(), rs1.into(), imm as i64 as u64),
-                0b010 => user.slti( rd.into(), rs1.into(), imm as i64 as u64),
-                0b011 => user.sltiu(rd.into(), rs1.into(), imm as i64 as u64),
-                0b100 => user.xori( rd.into(), rs1.into(), imm as i64 as u64),
-                0b110 => user.ori(  rd.into(), rs1.into(), imm as i64 as u64),
-                0b111 => user.andi( rd.into(), rs1.into(), imm as i64 as u64),
-                0b001 => {
-                    let mode = (imm >> 6) & 0b111111;
-                    let shamt = imm & 0b111111;
-                    
-                    match mode {
-                        0b000000 => user.slli(rd.into(), rs1.into(), shamt),
-                        _ => unreachable!(),
-                    }
-                }
-                0b101 => {
-                    let mode = (imm >> 6) & 0b111111;
-                    let shamt = imm & 0b111111;
-                    
-                    match mode {
-                        0b000000 => user.srli(rd.into(), rs1.into(), shamt),
-                        0b010000 => user.srai(rd.into(), rs1.into(), shamt),
-                        _ => unreachable!(),
-                    }
-                }
-                _ => unreachable!(),
-            }
-        }
-        0b0110011 => {
-            let Rtype{
-                funct7, rs2, rs1, funct3, rd,
-            } = Rtype::from(inst);
-
-            match (funct7, funct3) {
-                (0b0000000, 0b000) => user.add(   rd.into(), rs1.into(), rs2.into()),
-                (0b0100000, 0b000) => user.sub(   rd.into(), rs1.into(), rs2.into()),
-                (0b0000000, 0b001) => user.sll(   rd.into(), rs1.into(), rs2.into()),
-                (0b0000000, 0b010) => user.slt(   rd.into(), rs1.into(), rs2.into()),
-                (0b0000000, 0b011) => user.sltu(  rd.into(), rs1.into(), rs2.into()),
-                (0b0000000, 0b100) => user.xor(   rd.into(), rs1.into(), rs2.into()),
-                (0b0000000, 0b101) => user.srl(   rd.into(), rs1.into(), rs2.into()),
-                (0b0100000, 0b101) => user.sra(   rd.into(), rs1.into(), rs2.into()),
-                (0b0000000, 0b110) => user.or(    rd.into(), rs1.into(), rs2.into()),
-                (0b0000000, 0b111) => user.and(   rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b000) => user.mul(   rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b001) => user.mulh(  rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b010) => user.mulhsu(rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b011) => user.mulhu( rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b100) => user.div(   rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b101) => user.divu(  rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b110) => user.rem(   rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b111) => user.remu(  rd.into(), rs1.into(), rs2.into()),
-                _ => unreachable!(),
-            }
-        }
-        0b0111011 => {
-            let Rtype{
-                funct7, rs2, rs1, funct3, rd,
-            } = Rtype::from(inst);
-
-            match (funct7, funct3) {
-                (0b0000000, 0b000) => user.addw( rd.into(), rs1.into(), rs2.into()),
-                (0b0100000, 0b000) => user.subw( rd.into(), rs1.into(), rs2.into()),
-                (0b0000000, 0b001) => user.sllw( rd.into(), rs1.into(), rs2.into()),
-                (0b0000000, 0b101) => user.srlw( rd.into(), rs1.into(), rs2.into()),
-                (0b0100000, 0b101) => user.sraw( rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b000) => user.mulw( rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b100) => user.divw( rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b101) => user.divuw(rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b110) => user.remw( rd.into(), rs1.into(), rs2.into()),
-                (0b0000001, 0b111) => user.remuw(rd.into(), rs1.into(), rs2.into()),
-                _ => unreachable!(),
-            }
-        }
-        0b0001111 => {
-            let Itype{
-                imm, rs1, funct3, rd,
-            } = Itype::from(inst);
-
-            match funct3 {
-                0b000 => user.fence(),
-                0b001 => user.fence_i(),
-                _ => unreachable!(),
-            }
-        }
-        0b1110011 => {
-            let Itype{
-                imm, rs1, funct3, rd,
-            } = Itype::from(inst);
-
-            match funct3 {
-                0b000 => {
-                    if inst == 0b00000000000000000000000001110011 {
-                        user.ecall()
-                    } else if inst == 0b00000000000100000000000001110011 {
-                        user.ebreak()
-                    } else {
-                        unreachable!();
-                    }
-                }
-                0b001 => user.csrrw( rd.into(), rs1.into(), imm),
-                0b010 => user.csrrs( rd.into(), rs1.into(), imm),
-                0b011 => user.csrrc( rd.into(), rs1.into(), imm),
-                0b101 => user.csrrwi(rd.into(), rs1.into(), imm),
-                0b110 => user.csrrsi(rd.into(), rs1.into(), imm),
-                0b111 => user.csrrci(rd.into(), rs1.into(), imm),
-            }
-
-        }
-        0b0011011 => {
-            let Itype{
-                imm, rs1, funct3, rd,
-            } = Itype::from(inst);
-
-            match funct3 {
-                0b000 => user.addiw(rd.into(), rs1.into(), imm as u32),
-                0b001 => {
-                    let mode = (imm >> 5) & 0b1111111;
-                    let shamt = imm & 0b11111;
-                    
-                    match mode {
-                        0b0000000 => user.slliw(rd.into(), rs1.into(), shamt),
-                        _ => unreachable!(),
-                    }
-                }
-                0b101 => {
-                    let mode = (imm >> 5) & 0b1111111;
-                    let shamt = imm & 0b11111;
-
-                    match mode {
-                        0b0000000 => user.srliw(rd.into(), rs1.into(), shamt),
-                        0b0100000 => user.sraiw(rd.into(), rs1.into(), shamt),
-                        _ => unreachable!(),
-                    }
-                }
-                _ => unreachable!(),
-            }
-        }
-        _ => unimplemented!("Unhandled opcode {:#09b}\n", opcode),
-    }
+    /// # Compact Ebreak (RV32C)
+    /// 
+    /// Cause control to be transferred back to the debugging environment.
+    fn c_ebreak(&mut self) -> Result<T, Self::Error>;
 }
