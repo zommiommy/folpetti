@@ -1,5 +1,4 @@
-use bitfields::*;
-
+use traits::*;
 
 /// An R-type instruction
 #[derive(Debug)]

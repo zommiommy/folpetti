@@ -1,6 +1,6 @@
 
 #![cfg(test)]
-use bitfields::*;
+use traits::*;
 
 #[test]
 fn test_extract_bit() {

@@ -1,5 +1,5 @@
 use crate::virtaddr::*;
-use bitfields::*;
+use traits::*;
 use alloc::alloc::{Allocator, Global, Layout, AllocError};
 use core::sync::atomic::{AtomicPtr, Ordering};
 

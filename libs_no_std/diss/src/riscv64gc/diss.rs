@@ -1,5 +1,5 @@
 use super::*;
-use bitfields::*;
+use traits::*;
 
 /// Disassemble a u32 instruction and call the visitor `User` with the relative
 /// Instruction

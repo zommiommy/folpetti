@@ -1,8 +1,6 @@
 //! Simple traits to extract bitfields from a word.
 //! This is simple but it's realayable as every case is tested and it pass
 //! MIRI so no UB yay
-#![no_std]
-#[allow(non_snake_case)]
 
 pub trait BitFields {
     /// Get the i-th bit in the word. Valid values: [0, 63]
@@ -29,6 +27,7 @@ impl BitFields for $t {
     #[inline(always)]
     fn extract_bitfield<const START_BIT: usize, const END_BIT: usize>(&self) -> Self {
         debug_assert!(START_BIT < END_BIT);
+        debug_assert!(END_BIT < core::mem::size_of::<$t>() * 8);
         let n_bits = core::mem::size_of::<$t>() * 8;
         let mask: $t = <$t>::MAX >> (n_bits - (END_BIT - START_BIT));
         (self >> START_BIT) & mask
