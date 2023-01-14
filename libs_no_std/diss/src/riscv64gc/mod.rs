@@ -3,7 +3,7 @@
 //! https://github.com/gamozolabs/fuzz_with_emus/blob/master/src/emulator.rs
 //! 
 //! This should handle anything that targets `riscv64gc-unknown-linux-gnu`
-use crate::utils::*;
+use traits::*;
 
 mod regs;
 pub use regs::*;

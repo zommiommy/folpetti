@@ -3,7 +3,7 @@ use std::io::prelude::*;
 use std::fs;
 use std::fs::File;
 use std::process::exit;
-use binstuff::ELF;
+use elf::ELF;
 
 const SECTIONS_TO_REMOVE: [&str; 3] = [
     ".comment",

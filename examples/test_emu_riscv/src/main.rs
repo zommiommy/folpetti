@@ -1,6 +1,6 @@
 
 //use mmu::MMU;
-use diss::riscv64gc::{diss_riscv64gc, RV64GCUser, RV64GCPrint};
+use diss::riscv64gc::{diss_riscv64gc, RV64GCPrint};
 use goblin::Object;
 
 const EM_RISCV: u16 = 243;

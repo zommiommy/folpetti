@@ -23,7 +23,7 @@ pub fn diss_riscv64gc<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
 
 fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16) 
     -> Result<T, User::Error> {
-    match inst.extract_bitfield::<13, 16>() {
+    match inst.extract_bitfield(13, 16) {
         0b000 => {
             let CIWtype{
                 funct3, imm, rd_prime
@@ -103,7 +103,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
 
 fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16) 
     -> Result<T, User::Error> {
-    match inst.extract_bitfield::<13, 16>() {
+    match inst.extract_bitfield(13, 16) {
         0b000 => {
             let CItype{
                 funct3,
@@ -256,7 +256,7 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
 
 fn diss_riscv64gc_2b_q2_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16) 
     -> Result<T, User::Error> {
-    match inst.extract_bitfield::<13, 16>() {
+    match inst.extract_bitfield(13, 16) {
         0b011 => {
             let CRtype{
                 funct4,
@@ -767,7 +767,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
                 0b000 => user.addi( rd.into(), rs1.into(), imm),
                 0b010 => user.slti( rd.into(), rs1.into(), imm),
                 0b011 => {
-                    let uimm = inst.extract_bitfield::<20, 32>();
+                    let uimm = inst.extract_bitfield(20, 32);
                     user.sltiu(rd.into(), rs1.into(), uimm)
                 },
                 0b100 => user.xori( rd.into(), rs1.into(), imm),

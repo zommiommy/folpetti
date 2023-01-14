@@ -5,9 +5,6 @@
 extern crate alloc;
 use alloc::vec::{self, Vec};
 
-mod word;
-pub use word::*;
-
 
 /// A trait for values that can be used as indices
 pub trait IndexTrait: TryFrom<usize> + Into<usize> + Copy + Clone 

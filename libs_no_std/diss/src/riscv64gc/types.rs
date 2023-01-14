@@ -14,11 +14,11 @@ impl From<u32> for Rtype {
     fn from(inst: u32) -> Self {
         debug_assert_eq!(inst & 0b11, 0b11);
         Rtype {
-            funct7: inst.extract_bitfield::<25, 32>(),
-            rs2:    inst.extract_bitfield::<20, 25>(),
-            rs1:    inst.extract_bitfield::<15, 20>(),
-            funct3: inst.extract_bitfield::<12, 15>(),
-            rd:     inst.extract_bitfield::< 7, 12>(),
+            funct7: inst.extract_bitfield(25, 32),
+            rs2:    inst.extract_bitfield(20, 25),
+            rs1:    inst.extract_bitfield(15, 20),
+            funct3: inst.extract_bitfield(12, 15),
+            rd:     inst.extract_bitfield( 7, 12),
         }
     }
 }
@@ -38,12 +38,12 @@ impl From<u32> for R4type {
     fn from(inst: u32) -> Self {
         debug_assert_eq!(inst & 0b11, 0b11);
         R4type {
-            rs3:    inst.extract_bitfield::<27, 32>(),
-            funct2: inst.extract_bitfield::<25, 27>(),
-            rs2:    inst.extract_bitfield::<20, 27>(),
-            rs1:    inst.extract_bitfield::<15, 20>(),
-            funct3: inst.extract_bitfield::<12, 15>(),
-            rd:     inst.extract_bitfield::< 7, 12>(),
+            rs3:    inst.extract_bitfield(27, 32),
+            funct2: inst.extract_bitfield(25, 27),
+            rs2:    inst.extract_bitfield(20, 27),
+            rs1:    inst.extract_bitfield(15, 20),
+            funct3: inst.extract_bitfield(12, 15),
+            rd:     inst.extract_bitfield( 7, 12),
         }
     }
 }
@@ -60,16 +60,16 @@ pub(crate) struct Stype {
 impl From<u32> for Stype {
     fn from(inst: u32) -> Self {
         debug_assert_eq!(inst & 0b11, 0b11);
-        let imm115 = inst.extract_bitfield::<25, 32>();
-        let imm40  = inst.extract_bitfield::< 7, 12>();
+        let imm115 = inst.extract_bitfield(25, 32);
+        let imm40  = inst.extract_bitfield( 7, 12);
 
         let imm = (imm115 << 5) | imm40;
 
         Stype {
-            imm:    imm.sign_extend::<20>(),
-            rs2:    inst.extract_bitfield::<20, 25>(),
-            rs1:    inst.extract_bitfield::<15, 20>(),
-            funct3: inst.extract_bitfield::<12, 15>(),
+            imm:    imm.sign_extend(20).to_signed(),
+            rs2:    inst.extract_bitfield(20, 25),
+            rs1:    inst.extract_bitfield(15, 20),
+            funct3: inst.extract_bitfield(12, 15),
         }
     }
 }
@@ -84,10 +84,10 @@ pub(crate) struct Jtype {
 impl From<u32> for Jtype {
     fn from(inst: u32) -> Self {
         debug_assert_eq!(inst & 0b11, 0b11);
-        let imm20   = inst.extract_bitfield::<31, 32>();
-        let imm101  = inst.extract_bitfield::<21, 31>();
-        let imm11   = inst.extract_bitfield::<20, 21>();
-        let imm1912 = inst.extract_bitfield::<12, 20>();
+        let imm20   = inst.extract_bitfield(31, 32);
+        let imm101  = inst.extract_bitfield(21, 31);
+        let imm11   = inst.extract_bitfield(20, 21);
+        let imm1912 = inst.extract_bitfield(12, 20);
 
         let imm = (imm20   << 20) 
                     | (imm1912 << 12) 
@@ -95,8 +95,8 @@ impl From<u32> for Jtype {
                     | (imm101  << 1);
 
         Jtype {
-            imm: imm.sign_extend::<11>(),
-            rd:  inst.extract_bitfield::<7, 12>(),
+            imm: imm.sign_extend(11).to_signed(),
+            rd:  inst.extract_bitfield(7, 12),
         }
     }
 }
@@ -113,10 +113,10 @@ pub(crate) struct Btype {
 impl From<u32> for Btype {
     fn from(inst: u32) -> Self {
         debug_assert_eq!(inst & 0b11, 0b11);
-        let imm12  = inst.extract_bitfield::<31, 32>();
-        let imm105 = inst.extract_bitfield::<25, 31>();
-        let imm41  = inst.extract_bitfield::<8, 12>();
-        let imm11  = inst.extract_bitfield::<7, 8>();
+        let imm12  = inst.extract_bitfield(31, 32);
+        let imm105 = inst.extract_bitfield(25, 31);
+        let imm41  = inst.extract_bitfield(8, 12);
+        let imm11  = inst.extract_bitfield(7, 8);
 
         let imm = (imm12  << 12) 
                     | (imm11  << 11) 
@@ -124,10 +124,10 @@ impl From<u32> for Btype {
                     | (imm41  << 1);
 
         Btype {
-            imm:    imm.sign_extend::<19>(),
-            rs2:    inst.extract_bitfield::<20, 25>(),
-            rs1:    inst.extract_bitfield::<15, 20>(),
-            funct3: inst.extract_bitfield::<12, 15>(),
+            imm:    imm.sign_extend(19).to_signed(),
+            rs2:    inst.extract_bitfield(20, 25),
+            rs1:    inst.extract_bitfield(15, 20),
+            funct3: inst.extract_bitfield(12, 15),
         }
     }
 }
@@ -147,9 +147,9 @@ impl From<u32> for Itype {
         let imm = (inst as i32) >> 20; // TODO! check
         Itype {
             imm:    imm,
-            rs1:    inst.extract_bitfield::<15, 20>(),
-            funct3: inst.extract_bitfield::<12, 15>(),
-            rd:     inst.extract_bitfield::<7, 12>(),
+            rs1:    inst.extract_bitfield(15, 20),
+            funct3: inst.extract_bitfield(12, 15),
+            rd:     inst.extract_bitfield(7, 12),
         }
     }
 }
@@ -164,8 +164,8 @@ impl From<u32> for Utype {
     fn from(inst: u32) -> Self {
         debug_assert_eq!(inst & 0b11, 0b11);
         Utype {
-            imm: inst.extract_bitfield::<12, 32>(),
-            rd:  inst.extract_bitfield::<7, 12>(),
+            imm: inst.extract_bitfield(12, 32),
+            rd:  inst.extract_bitfield(7, 12),
         }
     }
 }
@@ -181,9 +181,9 @@ impl From<u16> for CRtype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CRtype {
-            funct4: inst.extract_bitfield::<12, 16>(),
-            rd_rs1: inst.extract_bitfield::< 7, 12>(),
-            rs2:    inst.extract_bitfield::< 2,  7>(),
+            funct4: inst.extract_bitfield(12, 16),
+            rd_rs1: inst.extract_bitfield( 7, 12),
+            rs2:    inst.extract_bitfield( 2,  7),
         }
     }
 }
@@ -200,10 +200,10 @@ impl From<u16> for CItype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CItype {
-            funct3: inst.extract_bitfield::<13, 16>(),
-            imm2:   inst.extract_bitfield::<12, 13>(),
-            rd_rs1: inst.extract_bitfield::< 7, 12>(),
-            imm1:   inst.extract_bitfield::< 2,  7>(),
+            funct3: inst.extract_bitfield(13, 16),
+            imm2:   inst.extract_bitfield(12, 13),
+            rd_rs1: inst.extract_bitfield( 7, 12),
+            imm1:   inst.extract_bitfield( 2,  7),
         }
     }
 }
@@ -219,9 +219,9 @@ impl From<u16> for CSStype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CSStype {
-            funct3: inst.extract_bitfield::<13, 16>(),
-            imm:    inst.extract_bitfield::< 7, 13>(),
-            rs2:    inst.extract_bitfield::< 2,  7>(),
+            funct3: inst.extract_bitfield(13, 16),
+            imm:    inst.extract_bitfield( 7, 13),
+            rs2:    inst.extract_bitfield( 2,  7),
         }
     }
 }
@@ -237,9 +237,9 @@ impl From<u16> for CIWtype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CIWtype {
-            funct3:   inst.extract_bitfield::<13, 16>(),
-            imm:      inst.extract_bitfield::< 5, 13>(),
-            rd_prime: inst.extract_bitfield::< 2,  5>(),
+            funct3:   inst.extract_bitfield(13, 16),
+            imm:      inst.extract_bitfield( 5, 13),
+            rd_prime: inst.extract_bitfield( 2,  5),
         }
     }
 }
@@ -257,11 +257,11 @@ impl From<u16> for CLtype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CLtype {
-            funct3:    inst.extract_bitfield::<13, 16>(),
-            imm2:      inst.extract_bitfield::<10, 13>(),
-            rs1_prime: inst.extract_bitfield::< 7, 10>(),
-            imm1:      inst.extract_bitfield::< 5,  7>(),
-            rd_prime:  inst.extract_bitfield::< 2,  5>(),
+            funct3:    inst.extract_bitfield(13, 16),
+            imm2:      inst.extract_bitfield(10, 13),
+            rs1_prime: inst.extract_bitfield( 7, 10),
+            imm1:      inst.extract_bitfield( 5,  7),
+            rd_prime:  inst.extract_bitfield( 2,  5),
         }
     }
 }
@@ -279,11 +279,11 @@ impl From<u16> for CStype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CStype {
-            funct3:     inst.extract_bitfield::<13, 16>(),
-            imm2:       inst.extract_bitfield::<10, 13>(),
-            rs1_prime:  inst.extract_bitfield::< 7, 10>(),
-            imm1:       inst.extract_bitfield::< 5,  7>(),
-            rs2_prime:  inst.extract_bitfield::< 2,  5>(),
+            funct3:     inst.extract_bitfield(13, 16),
+            imm2:       inst.extract_bitfield(10, 13),
+            rs1_prime:  inst.extract_bitfield( 7, 10),
+            imm1:       inst.extract_bitfield( 5,  7),
+            rs2_prime:  inst.extract_bitfield( 2,  5),
         }
     }
 }
@@ -300,10 +300,10 @@ impl From<u16> for CAtype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CAtype {
-            funct6:       inst.extract_bitfield::<10, 16>(),
-            rd_rs1_prime: inst.extract_bitfield::< 7, 10>(),
-            funct2:       inst.extract_bitfield::< 5,  7>(),
-            rs2_prime:    inst.extract_bitfield::< 2,  5>(),
+            funct6:       inst.extract_bitfield(10, 16),
+            rd_rs1_prime: inst.extract_bitfield( 7, 10),
+            funct2:       inst.extract_bitfield( 5,  7),
+            rs2_prime:    inst.extract_bitfield( 2,  5),
         }
     }
 }
@@ -320,10 +320,10 @@ impl From<u16> for CBtype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CBtype {
-            funct3:    inst.extract_bitfield::<13, 16>(),
-            offset2:   inst.extract_bitfield::<10, 13>(),
-            rs1_prime: inst.extract_bitfield::< 7, 10>(),
-            offset1:   inst.extract_bitfield::< 2,  7>(),
+            funct3:    inst.extract_bitfield(13, 16),
+            offset2:   inst.extract_bitfield(10, 13),
+            rs1_prime: inst.extract_bitfield( 7, 10),
+            offset1:   inst.extract_bitfield( 2,  7),
         }
     }
 }
@@ -338,8 +338,8 @@ impl From<u16> for CJtype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CJtype {
-            funct3:      inst.extract_bitfield::<13, 16>(),
-            jump_target: inst.extract_bitfield::< 2, 13>(),
+            funct3:      inst.extract_bitfield(13, 16),
+            jump_target: inst.extract_bitfield( 2, 13),
         }
     }
 }
