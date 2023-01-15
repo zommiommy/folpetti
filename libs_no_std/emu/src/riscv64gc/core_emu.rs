@@ -68,6 +68,23 @@ impl CoreEmu {
         self.fregs[reg as usize] = value;
     }
 
+    pub fn fork(&self) -> Self {
+        Self {
+            regs: self.regs,
+            fregs: self.fregs,
+            pc: self.pc,
+            mem: self.mem.fork(),
+        }
+    }
+
+    pub fn reset(&mut self, other: &Self) {
+        self.regs = other.regs;
+        self.fregs = other.fregs;
+        self.pc = other.pc;
+        self.mem.reset(&other.mem);
+    }
+
+
     pub fn run(&mut self) -> CoreEmuError {
         loop {
             let inst = self.mem.read(

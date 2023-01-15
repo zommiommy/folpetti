@@ -27,6 +27,14 @@ impl LinuxEmu {
         }
     }
 
+    pub fn reset(&mut self, other: &Self) {
+        self.core.reset(&other.core);
+    }
+
+    pub fn fork(&self) -> Self {
+        LinuxEmu { core: self.core.fork() }
+    }
+
     pub fn run(&mut self) -> LinuxEmuError {
         loop {
             match self.core.run() {

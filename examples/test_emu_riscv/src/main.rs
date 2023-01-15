@@ -61,15 +61,19 @@ fn main() {
         }
     }
 
-    let mut emu = LinuxEmu::new(mmu); 
-
     // FIND THE START FUNCTION and load its address in the program counter
     let start_symbol = elf.syms.iter().find(|x| 
         elf.strtab.get_at(x.st_name).unwrap() == "_start"
     ).unwrap();
     assert!(start_symbol.is_function());
     let start_address = start_symbol.st_value;
-    emu.core.pc = start_address;
 
+    let mut start_emu = LinuxEmu::new(mmu); 
+    start_emu.core.pc = start_address;
+
+    let mut emu = start_emu.fork();
     println!("{:?}", emu.run());
+    emu.reset(&start_emu);
+    println!("{:?}", emu.run());
+
 }
