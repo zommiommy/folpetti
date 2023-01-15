@@ -190,7 +190,7 @@ impl From<u16> for CRtype {
 
 #[derive(Debug)]
 pub(crate) struct CItype {
-    pub funct3: u16,
+//    pub funct3: u16,
     pub imm2:   u16,
     pub rd_rs1: u16,
     pub imm1:   u16,
@@ -200,7 +200,7 @@ impl From<u16> for CItype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CItype {
-            funct3: inst.extract_bitfield(13, 16),
+//            funct3: inst.extract_bitfield(13, 16),
             imm2:   inst.extract_bitfield(12, 13),
             rd_rs1: inst.extract_bitfield( 7, 12),
             imm1:   inst.extract_bitfield( 2,  7),
@@ -210,7 +210,7 @@ impl From<u16> for CItype {
 
 #[derive(Debug)]
 pub(crate) struct CSStype {
-    pub funct3: u16,
+//    pub funct3: u16,
     pub imm:    u16,
     pub rs2:    u16,
 }
@@ -219,7 +219,7 @@ impl From<u16> for CSStype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CSStype {
-            funct3: inst.extract_bitfield(13, 16),
+//            funct3: inst.extract_bitfield(13, 16),
             imm:    inst.extract_bitfield( 7, 13),
             rs2:    inst.extract_bitfield( 2,  7),
         }
@@ -228,7 +228,7 @@ impl From<u16> for CSStype {
 
 #[derive(Debug)]
 pub(crate) struct CIWtype {
-    pub funct3:   u16,
+//    pub funct3:   u16,
     pub imm:      u16,
     pub rd_prime: u16,
 }
@@ -237,7 +237,7 @@ impl From<u16> for CIWtype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CIWtype {
-            funct3:   inst.extract_bitfield(13, 16),
+//            funct3:   inst.extract_bitfield(13, 16),
             imm:      inst.extract_bitfield( 5, 13),
             rd_prime: inst.extract_bitfield( 2,  5),
         }
@@ -246,7 +246,7 @@ impl From<u16> for CIWtype {
 
 #[derive(Debug)]
 pub(crate) struct CLtype {
-    pub funct3:    u16,
+//    pub funct3:    u16,
     pub imm2:      u16,
     pub rs1_prime: u16,
     pub imm1:      u16,
@@ -257,7 +257,7 @@ impl From<u16> for CLtype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CLtype {
-            funct3:    inst.extract_bitfield(13, 16),
+//            funct3:    inst.extract_bitfield(13, 16),
             imm2:      inst.extract_bitfield(10, 13),
             rs1_prime: inst.extract_bitfield( 7, 10),
             imm1:      inst.extract_bitfield( 5,  7),
@@ -268,7 +268,7 @@ impl From<u16> for CLtype {
 
 #[derive(Debug)]
 pub(crate) struct CStype {
-    pub funct3:    u16,
+//    pub funct3:    u16,
     pub imm2:      u16,
     pub rs1_prime: u16,
     pub imm1:      u16,
@@ -279,7 +279,7 @@ impl From<u16> for CStype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CStype {
-            funct3:     inst.extract_bitfield(13, 16),
+//            funct3:     inst.extract_bitfield(13, 16),
             imm2:       inst.extract_bitfield(10, 13),
             rs1_prime:  inst.extract_bitfield( 7, 10),
             imm1:       inst.extract_bitfield( 5,  7),
@@ -310,7 +310,7 @@ impl From<u16> for CAtype {
 
 #[derive(Debug)]
 pub(crate) struct CBtype {
-    pub funct3:    u16,
+//    pub funct3:    u16,
     pub offset2:   u16,
     pub rs1_prime: u16,
     pub offset1:   u16,
@@ -320,7 +320,7 @@ impl From<u16> for CBtype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CBtype {
-            funct3:    inst.extract_bitfield(13, 16),
+//            funct3:    inst.extract_bitfield(13, 16),
             offset2:   inst.extract_bitfield(10, 13),
             rs1_prime: inst.extract_bitfield( 7, 10),
             offset1:   inst.extract_bitfield( 2,  7),
@@ -330,16 +330,16 @@ impl From<u16> for CBtype {
 
 #[derive(Debug)]
 pub(crate) struct CJtype {
-    pub funct3:      u16,
-    pub jump_target: u16,
+//    pub funct3:      u16,
+    pub jump_target: i16,
 }
 
 impl From<u16> for CJtype {
     fn from(inst: u16) -> Self {
         debug_assert_ne!(inst & 0b11, 0b11);
         CJtype {
-            funct3:      inst.extract_bitfield(13, 16),
-            jump_target: inst.extract_bitfield( 2, 13),
+//            funct3:      inst.extract_bitfield(13, 16),
+            jump_target: inst.extract_bitfield( 2, 13).sign_extend(12).to_signed(),
         }
     }
 }

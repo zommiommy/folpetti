@@ -25,7 +25,8 @@ use alloc::collections::BTreeMap;
 use core::intrinsics::unlikely;
 use core::ops::Range;
 
-mod pagetable;
+//mod pagetable;
+
 mod virtaddr;
 pub use virtaddr::*;
 mod bitmap;

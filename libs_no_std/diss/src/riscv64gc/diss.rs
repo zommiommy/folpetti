@@ -26,19 +26,21 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
     match inst.extract_bitfield(13, 16) {
         0b000 => {
             let CIWtype{
-                funct3, imm, rd_prime
+                imm, rd_prime
             } = CIWtype::from(inst);
             if imm == 0 {
                 panic!("Illegal instruction");
             }
-            let nzuimm = ((imm & 0b1) << 3) 
+            let nzuimm = (
+                ((imm & 0b1) << 3) 
                 | ((imm & 0b11100) << 6) 
-                | ((imm & 0b1100000) >> 1);
+                | ((imm & 0b1100000) >> 1)
+            ).zero_extend(9);
             user.c_addi4spn(Register::from_prime(rd_prime), nzuimm)
         }
         0b001 => {
             let CLtype {
-                funct3, imm2, rs1_prime, imm1, rd_prime,
+                imm2, rs1_prime, imm1, rd_prime,
             } = CLtype::from(inst);
             user.c_fld(
                 Register::from_prime(rd_prime),
@@ -48,7 +50,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b010 => {
             let CLtype {
-                funct3, imm2, rs1_prime, imm1, rd_prime,
+                imm2, rs1_prime, imm1, rd_prime,
             } = CLtype::from(inst);
             user.c_lw(
                 Register::from_prime(rd_prime),
@@ -58,7 +60,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b011 => {
             let CLtype {
-                funct3, imm2, rs1_prime, imm1, rd_prime,
+                imm2, rs1_prime, imm1, rd_prime,
             } = CLtype::from(inst);
             user.c_ld(
                 Register::from_prime(rd_prime),
@@ -69,7 +71,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         0b100 => unimplemented!("Reserved Compact Instruction"),
         0b101 => {
             let CStype {
-                funct3, imm2, rs1_prime, imm1, rs2_prime,
+                imm2, rs1_prime, imm1, rs2_prime,
             } = CStype::from(inst);
             user.c_fsd(
                 Register::from_prime(rs1_prime),
@@ -79,7 +81,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b110 => {
             let CStype {
-                funct3, imm2, rs1_prime, imm1, rs2_prime,
+                imm2, rs1_prime, imm1, rs2_prime,
             } = CStype::from(inst);
             user.c_sw(
                 Register::from_prime(rs1_prime),
@@ -89,11 +91,11 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b111 => {
             let CStype {
-                funct3, imm2, rs1_prime, imm1, rs2_prime,
+                imm2, rs1_prime, imm1, rs2_prime,
             } = CStype::from(inst);
             user.c_sd(
                 Register::from_prime(rs1_prime),
-                FloatRegister::from_prime(rs2_prime),
+                Register::from_prime(rs2_prime),
                 compose_imms_53_2_or_6(imm1, imm2),
             )
         }
@@ -106,7 +108,6 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
     match inst.extract_bitfield(13, 16) {
         0b000 => {
             let CItype{
-                funct3,
                 imm2,
                 rd_rs1,
                 imm1,
@@ -126,7 +127,6 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b001 => {
             let CItype{
-                funct3,
                 imm2,
                 rd_rs1,
                 imm1,
@@ -141,7 +141,6 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b010 => {
             let CItype{
-                funct3,
                 imm2,
                 rd_rs1,
                 imm1,
@@ -156,7 +155,6 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b011 => {
             let CItype{
-                funct3,
                 imm2,
                 rd_rs1,
                 imm1,
@@ -179,7 +177,6 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b100 => {
             let CBtype{
-                funct3,
                 offset2,
                 rs1_prime,
                 offset1,
@@ -214,11 +211,13 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
             }
         }
         0b101 => {
-            todo!()
+            let CJtype{
+                jump_target,
+            } = CJtype::from(inst);
+            user.c_j(jump_target)
         }
         0b110 => {
             let CBtype{
-                funct3,
                 offset2,
                 rs1_prime,
                 offset1,
@@ -235,7 +234,6 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b111 => {
             let CBtype{
-                funct3,
                 offset2,
                 rs1_prime,
                 offset1,
@@ -267,7 +265,7 @@ fn diss_riscv64gc_2b_q2_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
             let imm = (funct4 & 1) << 5 | (
                 (rs2 & 0b00111) << 6
             ) | (
-                (rs2 & 0b11000) << 3
+                (rs2 & 0b11000)
             );
             user.c_ldsp(rd, imm as u8)
         }
@@ -306,11 +304,10 @@ fn diss_riscv64gc_2b_q2_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         },
         0b111 => {
             let CSStype{
-                funct3,
                 imm,
                 rs2,
             } = CSStype::from(inst);
-            let rs2 = FloatRegister::from(rs2 as u32);
+            let rs2 = Register::from(rs2 as u32);
 
             let uimm = (imm & 0b111) << 6
                 | (imm & 0b111000);
@@ -334,11 +331,11 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         }
         0b0010111 => {
             let Utype{imm, rd} = Utype::from(inst);
-            user.auipc(rd.into(), imm << 12)
+            user.auipc(rd.into(), imm)
         }
         0b1101111 => {
             let Jtype{imm, rd} = Jtype::from(inst);
-            user.jal(rd.into(), imm as i64 as u64)
+            user.jal(rd.into(), imm)
         }
         0b1100111 => {
             let Itype{
@@ -346,7 +343,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
             } = Itype::from(inst);
             match funct3 {
                 0b000 => {
-                    user.jalr(rd.into(), imm as i64 as u64)
+                    user.jalr(rd.into(), imm)
                 }
                 _ => unimplemented!("Unexpected 0b1100111"),
             }
@@ -356,12 +353,12 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
                 imm, rs2, rs1, funct3,
             } = Btype::from(inst);
             match funct3 {
-                0b000 => user.beq( rs1.into(), rs2.into(), imm as i64 as u64),
-                0b001 => user.bne( rs1.into(), rs2.into(), imm as i64 as u64),
-                0b100 => user.blt( rs1.into(), rs2.into(), imm as i64 as u64),
-                0b101 => user.bge( rs1.into(), rs2.into(), imm as i64 as u64),
-                0b110 => user.bltu(rs1.into(), rs2.into(), imm as i64 as u64),
-                0b111 => user.bgeu(rs1.into(), rs2.into(), imm as i64 as u64),
+                0b000 => user.beq( rs1.into(), rs2.into(), imm),
+                0b001 => user.bne( rs1.into(), rs2.into(), imm),
+                0b100 => user.blt( rs1.into(), rs2.into(), imm),
+                0b101 => user.bge( rs1.into(), rs2.into(), imm),
+                0b110 => user.bltu(rs1.into(), rs2.into(), imm),
+                0b111 => user.bgeu(rs1.into(), rs2.into(), imm),
                 _ => unimplemented!("Unexpected 0b1100011"),
             }
         }

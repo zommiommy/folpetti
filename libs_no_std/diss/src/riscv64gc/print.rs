@@ -197,42 +197,42 @@ impl RV64GCUser<usize> for RV64GCPrint {
         Ok(4)
     }
     
-    fn jal(&mut self, rd: Register, imm: u64) -> Result<usize, Self::Error> {
+    fn jal(&mut self, rd: Register, imm: i32) -> Result<usize, Self::Error> {
         println!("jal {:?} {}", rd, imm);
         Ok(4)
     }
     
-    fn jalr(&mut self, rd: Register, imm: u64) -> Result<usize, Self::Error> {
+    fn jalr(&mut self, rd: Register, imm: i32) -> Result<usize, Self::Error> {
         println!("jalr {:?} {}", rd, imm);
         Ok(4)
     }
     
-    fn beq(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<usize, Self::Error> {
+    fn beq(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<usize, Self::Error> {
         println!("beq {:?} {:?} {}", rs1, rs2, imm);
         Ok(4)
     }
     
-    fn bne(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<usize, Self::Error> {
+    fn bne(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<usize, Self::Error> {
         println!("bne {:?} {:?} {}", rs1, rs2, imm);
         Ok(4)
     }
     
-    fn blt(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<usize, Self::Error> {
+    fn blt(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<usize, Self::Error> {
         println!("blt {:?} {:?} {}", rs1, rs2, imm);
         Ok(4)
     }
     
-    fn bge(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<usize, Self::Error> {
+    fn bge(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<usize, Self::Error> {
         println!("bge {:?} {:?} {}", rs1, rs2, imm);
         Ok(4)
     }
     
-    fn bltu(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<usize, Self::Error> {
+    fn bltu(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<usize, Self::Error> {
         println!("bltu {:?} {:?} {}", rs1, rs2, imm);
         Ok(4)
     }
     
-    fn bgeu(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<usize, Self::Error> {
+    fn bgeu(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<usize, Self::Error> {
         println!("bgeu {:?} {:?} {}", rs1, rs2, imm);
         Ok(4)
     }
@@ -697,7 +697,7 @@ impl RV64GCUser<usize> for RV64GCPrint {
         Ok(2)
     }
     
-    fn c_sd(&mut self, rs1: Register, rs2: FloatRegister, uimm: u16) -> Result<usize, Self::Error> {
+    fn c_sd(&mut self, rs1: Register, rs2: Register, uimm: u16) -> Result<usize, Self::Error> {
         println!("c_sd {:?} {:?} {}", rs1, rs2, uimm);
         Ok(2)
     }
@@ -852,7 +852,7 @@ impl RV64GCUser<usize> for RV64GCPrint {
         Ok(2)
     }
     
-    fn c_sdsp(&mut self, rs2: FloatRegister, uimm: u8) -> Result<usize, Self::Error> {
+    fn c_sdsp(&mut self, rs2: Register, uimm: u8) -> Result<usize, Self::Error> {
         println!("c_sdsp {:?} {}", rs2, uimm);
         Ok(2)
     }

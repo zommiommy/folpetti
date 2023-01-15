@@ -368,21 +368,21 @@ pub trait RV64GCUser<T> {
     /// Jump to address and place return address in rd.
     /// 
     /// `x[rd] = pc+4; pc += sext(offset)`
-    fn jal(&mut self, rd: Register, imm: u64) -> Result<T, Self::Error>;
+    fn jal(&mut self, rd: Register, imm: i32) -> Result<T, Self::Error>;
 
     /// # Jump and link in relative (RV32I)
     /// 
     /// Jump to address and place return address in rd.
     /// 
     /// `t =pc+4; pc=(x[rs1]+sext(offset))&∼1; x[rd]=t`
-    fn jalr(&mut self, rd: Register, imm: u64) -> Result<T, Self::Error>;
+    fn jalr(&mut self, rd: Register, imm: i32) -> Result<T, Self::Error>;
 
     /// # Branch Equal (RV32I)
     /// 
     /// Take the branch if registers rs1 and rs2 are equal.
     /// 
     /// `if (rs1 == rs2) pc += sext(offset)`
-    fn beq(&mut self, rs1: Register, rs2: Register, imm: u64) 
+    fn beq(&mut self, rs1: Register, rs2: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Branch Not Equal (RV32I)
@@ -390,7 +390,7 @@ pub trait RV64GCUser<T> {
     /// Take the branch if registers rs1 and rs2 are not equal.
     /// 
     /// `if (rs1 != rs2) pc += sext(offset)`
-    fn bne(&mut self, rs1: Register, rs2: Register, imm: u64) 
+    fn bne(&mut self, rs1: Register, rs2: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Branch Less Than (RV32I)
@@ -399,7 +399,7 @@ pub trait RV64GCUser<T> {
     /// comparison.
     /// 
     /// `if (rs1 <s rs2) pc += sext(offset)`
-    fn blt(&mut self, rs1: Register, rs2: Register, imm: u64) 
+    fn blt(&mut self, rs1: Register, rs2: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Branch Greater Equal (RV32I)
@@ -408,7 +408,7 @@ pub trait RV64GCUser<T> {
     /// comparison.
     /// 
     /// `if (rs1 >=s rs2) pc += sext(offset)`
-    fn bge(&mut self, rs1: Register, rs2: Register, imm: u64) 
+    fn bge(&mut self, rs1: Register, rs2: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Branch Less Than Unsigned (RV32I)
@@ -417,7 +417,7 @@ pub trait RV64GCUser<T> {
     /// comparison.
     /// 
     /// `if (rs1 >u rs2) pc += sext(offset)`
-    fn bltu(&mut self, rs1: Register, rs2: Register, imm: u64) 
+    fn bltu(&mut self, rs1: Register, rs2: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Branch Greater Equal Unsigned (RV32I)
@@ -426,7 +426,7 @@ pub trait RV64GCUser<T> {
     /// comparison.
     /// 
     /// `if (rs1 >=u rs2) pc += sext(offset)`
-    fn bgeu(&mut self, rs1: Register, rs2: Register, imm: u64) 
+    fn bgeu(&mut self, rs1: Register, rs2: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Add Immediate Word (RV64I)
@@ -1377,7 +1377,7 @@ pub trait RV64GCUser<T> {
     /// `M[x[8+rs1'] + uimm][63:0] = x[8+rs2']`
     /// Translated:
     /// `M[x[rs1] + uimm][63:0] = x[rs2]`
-    fn c_sd(&mut self, rs1: Register, rs2: FloatRegister, uimm: u16) 
+    fn c_sd(&mut self, rs1: Register, rs2: Register, uimm: u16) 
         -> Result<T, Self::Error>;
 
     /// # Compact Add Immediate (RV32C)
@@ -1661,7 +1661,7 @@ pub trait RV64GCUser<T> {
     /// scaled by 8, to the stack pointer, x2.
     /// 
     /// `M[x[2] + uimm][63:0] = x[rs2]`
-    fn c_sdsp(&mut self, rs2: FloatRegister, uimm: u8) -> Result<T, Self::Error>;
+    fn c_sdsp(&mut self, rs2: Register, uimm: u8) -> Result<T, Self::Error>;
 
 
 
