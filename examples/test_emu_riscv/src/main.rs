@@ -1,63 +1,75 @@
 
-//use mmu::MMU;
-use diss::riscv64gc::{diss_riscv64gc, RV64GCPrint};
+use mmu::{Mmu, Perm, PermField, VirtAddr};
+use emu::riscv64gc::LinuxEmu;
 use goblin::Object;
 
-const EM_RISCV: u16 = 243;
-
 fn main() {
-    let buffer = std::fs::read("../test_fuzz/target/riscv64gc-unknown-linux-gnu/debug/test_fuzz").unwrap();
-    let elf = match Object::parse(&buffer).unwrap() {
+    let file_bytes = std::fs::read("../test_fuzz/target/riscv64gc-unknown-linux-gnu/debug/test_fuzz").unwrap();
+    let elf = match Object::parse(&file_bytes).unwrap() {
         Object::Elf(elf) => {
             elf
         },
         _ => panic!(),
     };
 
+    const EM_RISCV: u16 = 243;
     assert_eq!(elf.header.e_machine, EM_RISCV);
 
-    // FIND THE START FUNCTION
+    let mut mmu = <Mmu<
+            256, // DIRTY_BLOCK_SIZE
+            true, // RAW
+            true, // TAINT
+        >>::new().unwrap();
+
+    // LOAD ALL THE SEGMENTS
+    for segment in elf.program_headers {
+        println!("{:?}", segment);
+
+        let mut perms = Perm::default();
+
+        if segment.is_read() {
+            perms |= PermField::Read;
+        }
+        if segment.is_write() {
+            perms |= PermField::Write;
+        }
+        if segment.is_executable() {
+            perms |= PermField::Executable;
+        }
+
+        unsafe {
+            // data from file
+            mmu.write_from_slice(
+                VirtAddr(segment.vm_range().start),
+                &file_bytes[segment.file_range()],
+                Some(perms),
+            ).unwrap();
+        }
+
+        // padded with zeros if needed
+        let padding_length = segment.vm_range().len() - segment.file_range().len();
+        if segment.vm_range().len() > segment.file_range().len() {
+            unsafe{
+                mmu.write_from_slice(
+                    VirtAddr(
+                        segment.vm_range().start + segment.file_range().end
+                    ), 
+                    &vec![0; padding_length], 
+                    Some(perms),
+                ).unwrap();
+            }
+        }
+    }
+
+    let mut emu = LinuxEmu::new(mmu); 
+
+    // FIND THE START FUNCTION and load its address in the program counter
     let start_symbol = elf.syms.iter().find(|x| 
         elf.strtab.get_at(x.st_name).unwrap() == "_start"
     ).unwrap();
     assert!(start_symbol.is_function());
-
-    println!("{:?}", start_symbol);
-
     let start_address = start_symbol.st_value;
+    emu.core.pc = start_address;
 
-    // LOAD ALL THE SEGMENTS
-    for segment in elf.program_headers {
-        if segment.vm_range().contains(&(start_address as usize)) {
-            println!("{:?}", segment);
-
-            let file_offset = start_address - segment.vm_range().start as u64;
-            let file_pos = segment.file_range().start + file_offset as usize;
-            let start = &buffer[file_pos..file_pos + 0x100];
-            println!("{:02x?}", start);
-
-            let mut ip = file_pos;
-            loop {
-                let inst = u32::from_le_bytes((&buffer[ip..ip+4]).try_into().unwrap());
-                println!("{:016x} {:02x?}", 
-                    segment.vm_range().start + ip - segment.file_range().start,
-                    inst.to_le_bytes(),
-                );
-                let offset = diss_riscv64gc(&mut RV64GCPrint, inst).unwrap();
-                ip += offset;
-            }
-
-        }
-        /*
-        mmu.set(
-            buffer,
-            segment.vm_range(),
-            segment.is_read(),
-            segment.is_write(),
-            segment.is_executable(),
-        );
-        */
-    }
-    
-
+    println!("{:?}", emu.run());
 }

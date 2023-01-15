@@ -66,8 +66,6 @@ pub enum Register {
     T5,
     /// Temp, Caller Saved
     T6,
-    /// Program Counter
-    Pc,
 }
 
 impl Register {

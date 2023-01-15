@@ -151,8 +151,9 @@ impl<
     /// Return a new empty MMU that can contains at most `size` bytes.
     /// We have an additional requirement, `size` must be a multiple of 
     /// `DIRTY_BLOCK_SIZE` and `DIRTY_BLOCK_SIZE` must be a multiple of 64.
-    pub fn new(size: usize) -> Result<Self, MmuError> {
-        
+    pub fn new() -> Result<Self, MmuError> {
+        todo!();
+        /*
         // Check that the dirty block size is reasonable. This should be a
         // static assert but in rust these are not awesome lol
         if unlikely(DIRTY_BLOCK_SIZE % 64 != 0) {
@@ -187,6 +188,7 @@ impl<
             // the check
             dirty: DirtyState::new(size / DIRTY_BLOCK_SIZE).unwrap(),
         })
+        */
     }
 
     /// Create a copy of the current memory resetting the dirty bytes infos so

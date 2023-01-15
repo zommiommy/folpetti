@@ -1,3 +1,4 @@
+#![feature(core_intrinsics)]
 #![cfg_attr(not(feature="std"), no_std)]
 //#![deny(unsafe_code)]
 //#![deny(unreachable_patterns)]

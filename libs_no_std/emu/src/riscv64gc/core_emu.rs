@@ -1,5 +1,7 @@
+use core::intrinsics::unlikely;
 use diss::riscv64gc::*;
 use mmu::{Mmu, VirtAddr, MmuError};
+use traits::Word;
 
 #[derive(Debug)]
 pub enum CoreEmuError {
@@ -15,18 +17,39 @@ pub enum CoreEmuError {
     Yield,
 }
 
+impl From<MmuError> for CoreEmuError {
+    fn from(value: MmuError) -> Self {
+        CoreEmuError::MmuError(value)
+    }
+} 
+
 pub struct CoreEmu {
-    pub regs: [u64; 33],
+    pub regs: [u64; 32],
+    pub fregs: [f64; 32],
+//  pub csr: u64,
+//  pub fcsr: u64,
+    pub pc: u64,
     pub mem: Mmu,
 }
 
 impl CoreEmu {
+    pub fn new(mem: Mmu) -> Self {
+        CoreEmu {
+            regs: [0; 32],
+            fregs: [0.0; 32],
+            pc: 0,
+            mem,
+        }
+    }
+
+    #[inline(always)]
     pub fn read_reg(&self, reg: Register) -> u64 {
         self.regs[reg as usize]
     }
 
+    #[inline(always)]
     pub fn write_reg(&mut self, reg: Register, value: u64) -> Result<(), CoreEmuError> {
-        if reg == Register::Zero {
+        if unlikely(reg == Register::Zero) {
             return Err(CoreEmuError::RegWrite);
         }
 
@@ -35,15 +58,25 @@ impl CoreEmu {
         Ok(())
     }
 
+    #[inline(always)]
+    pub fn read_freg(&self, reg: FloatRegister) -> f64 {
+        self.fregs[reg as usize]
+    }
+
+    #[inline(always)]
+    pub fn write_freg(&mut self, reg: FloatRegister, value: f64) {
+        self.fregs[reg as usize] = value;
+    }
+
     pub fn run(&mut self) -> CoreEmuError {
         loop {
             let inst = self.mem.read(
-                VirtAddr(self.read_reg(Register::Pc) as usize)
+                VirtAddr(self.pc as usize)
             );
             
             // TODO!: simplify this poopoo
             if let Err(e) = inst {
-                return CoreEmuError::MmuError(e);
+                return e.into();
             }
             let inst = inst.unwrap();
     
@@ -62,12 +95,14 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn auipc(&mut self, rd: Register, imm: u32) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.pc.wrapping_add_signed(imm as i64));
+        self.pc += 4;
         Ok(())
     }
 
     fn addi(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1).wrapping_add_signed(imm as i64))?;
+        self.pc += 4;
         Ok(())
     }
 
@@ -82,42 +117,50 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn xori(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1) ^ imm as i64 as u64)?;
+        self.pc += 4;
         Ok(())
     }
 
     fn ori(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1) | imm as i64 as u64)?;
+        self.pc += 4;
         Ok(())
     }
 
     fn andi(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1) & imm as i64 as u64)?;
+        self.pc += 4;
         Ok(())
     }
 
     fn slli(&mut self, rd: Register, rs1: Register, shamt: i32) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1).overflow_shl(shamt as u32 as u64))?;
+        self.pc += 4;
         Ok(())
     }
 
     fn srli(&mut self, rd: Register, rs1: Register, shamt: i32) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1).overflow_shr(shamt as u32 as u64))?;
+        self.pc += 4;
         Ok(())
     }
 
     fn srai(&mut self, rd: Register, rs1: Register, shamt: i32) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1).overflow_sar(shamt as u32 as u64))?;
+        self.pc += 4;
         Ok(())
     }
 
     fn add(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1).wrapping_add(self.read_reg(rs2)))?;
+        self.pc += 4;
         Ok(())
     }
 
     fn sub(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1).wrapping_sub(self.read_reg(rs2)))?;
+        self.pc += 4;
         Ok(())
     }
 
@@ -137,7 +180,8 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn xor(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1) ^ self.read_reg(rs2))?;
+        self.pc += 4;
         Ok(())
     }
 
@@ -152,12 +196,14 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn or(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1) | self.read_reg(rs2))?;
+        self.pc += 4;
         Ok(())
     }
 
     fn and(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1) & self.read_reg(rs2))?;
+        self.pc += 4;
         Ok(())
     }
 
@@ -247,7 +293,10 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn jal(&mut self, rd: Register, imm: i32) -> Result<(), Self::Error> {
-        todo!();
+        // ret addr
+        self.write_reg(rd, self.pc.wrapping_add(4));
+        // jmp
+        self.pc = self.pc.wrapping_add_signed(imm as i64);
         Ok(())
     }
 
@@ -332,7 +381,8 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn mul(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1).wrapping_mul(self.read_reg(rs2)))?;
+        self.pc += 4;
         Ok(())
     }
 
@@ -352,7 +402,8 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn div(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1).wrapping_div(self.read_reg(rs2)))?;
+        self.pc += 4;
         Ok(())
     }
 
@@ -362,7 +413,7 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn rem(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1).wrapping_rem(self.read_reg(rs2)))?;
         Ok(())
     }
 
@@ -1025,8 +1076,11 @@ impl RV64GCUser<()> for CoreEmu {
         Ok(())
     }
 
-    fn c_ld(&mut self, rd: Register, rs1: FloatRegister, uimm: u16) -> Result<(), Self::Error> {
-        todo!();
+    fn c_ld(&mut self, rd: Register, rs1: Register, uimm: u16) -> Result<(), Self::Error> {
+        let addr = self.read_reg(rs1).wrapping_add(uimm as u64);
+        let res = self.mem.read(VirtAddr(addr as usize))?;
+        self.write_reg(rd, res)?;
+        self.pc += 2;
         Ok(())
     }
 
@@ -1101,22 +1155,26 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn c_sub(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rd).wrapping_sub(self.read_reg(rs2)))?;
+        self.pc += 2;
         Ok(())
     }
 
     fn c_xor(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rd) ^ self.read_reg(rs2))?;
+        self.pc += 2;
         Ok(())
     }
 
     fn c_or(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rd) | self.read_reg(rs2))?;
+        self.pc += 2;
         Ok(())
     }
 
     fn c_and(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rd) & self.read_reg(rs2))?;
+        self.pc += 2;
         Ok(())
     }
 
@@ -1176,7 +1234,8 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn c_mv(&mut self, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rs1, self.read_reg(rs2))?;
+        self.pc += 2;
         Ok(())
     }
 
@@ -1186,7 +1245,8 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn c_add(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
-        todo!();
+        self.write_reg(rd, self.read_reg(rd).wrapping_add(self.read_reg(rs2)))?;
+        self.pc += 2;
         Ok(())
     }
 
@@ -1211,27 +1271,28 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn fence(&mut self) -> Result<(), Self::Error> {
-        todo!();
-        Ok(())
+        self.pc += 4;            
+        Err(CoreEmuError::Yield)
     }
     fn fence_i(&mut self) -> Result<(), Self::Error> {
-        todo!();
-        Ok(())
+        // CHECK
+        self.pc += 4;            
+        Err(CoreEmuError::Yield)
     }
     fn ecall(&mut self) -> Result<(), Self::Error> {
-        todo!();
-        Ok(())
+        self.pc += 4;            
+        Err(CoreEmuError::Syscall)
     }
     fn ebreak(&mut self) -> Result<(), Self::Error> {
-        todo!();
-        Ok(())
+        self.pc += 4;            
+        Err(CoreEmuError::Breakpoint)
     }
     fn c_nop(&mut self) -> Result<(), Self::Error> {
-        todo!();
+        self.pc += 2;            
         Ok(())
     }
     fn c_ebreak(&mut self) -> Result<(), Self::Error> {
-        todo!();
-        Ok(())
+        self.pc += 2;            
+        Err(CoreEmuError::Breakpoint)
     }
 }

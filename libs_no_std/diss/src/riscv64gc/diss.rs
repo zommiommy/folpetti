@@ -64,7 +64,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
             } = CLtype::from(inst);
             user.c_ld(
                 Register::from_prime(rd_prime),
-                FloatRegister::from_prime(rs1_prime),
+                Register::from_prime(rs1_prime),
                 compose_imms_53_76(imm1, imm2),
             )
         }

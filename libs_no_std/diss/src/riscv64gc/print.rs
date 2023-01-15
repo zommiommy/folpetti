@@ -677,7 +677,7 @@ impl RV64GCUser<usize> for RV64GCPrint {
         Ok(2)
     }
     
-    fn c_ld(&mut self, rd: Register, rs1: FloatRegister, uimm: u16) -> Result<usize, Self::Error> {
+    fn c_ld(&mut self, rd: Register, rs1: Register, uimm: u16) -> Result<usize, Self::Error> {
         println!("c_ld {:?} {:?} {}", rd, rs1, uimm);
         Ok(2)
     }

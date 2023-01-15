@@ -1327,7 +1327,7 @@ pub trait RV64GCUser<T> {
     /// `x[8+rd'] = M[x[8+rs1'] + uimm][63:0]`
     /// Translated:
     /// `x[rd] = M[x[rs1] + uimm][63:0]`
-    fn c_ld(&mut self, rd: Register, rs1: FloatRegister, uimm: u16) 
+    fn c_ld(&mut self, rd: Register, rs1: Register, uimm: u16) 
         -> Result<T, Self::Error>;
 
     /// # Compact Float Store Double (RV64C)

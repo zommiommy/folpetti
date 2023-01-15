@@ -1,5 +1,5 @@
 use super::{CoreEmu, CoreEmuError, LinuxSyscall};
-use mmu::{MmuError, VirtAddr};
+use mmu::{Mmu, MmuError, VirtAddr};
 use diss::riscv64gc::*;
 
 #[derive(Debug)]
@@ -21,6 +21,12 @@ pub struct LinuxEmu {
 }
 
 impl LinuxEmu {
+    pub fn new(mem: Mmu) -> Self {
+        LinuxEmu{
+            core:CoreEmu::new(mem)
+        }
+    }
+
     pub fn run(&mut self) -> LinuxEmuError {
         loop {
             match self.core.run() {
