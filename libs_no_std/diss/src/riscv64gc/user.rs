@@ -375,7 +375,7 @@ pub trait RV64GCUser<T> {
     /// Jump to address and place return address in rd.
     /// 
     /// `t =pc+4; pc=(x[rs1]+sext(offset))&∼1; x[rd]=t`
-    fn jalr(&mut self, rd: Register, imm: i32) -> Result<T, Self::Error>;
+    fn jalr(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<T, Self::Error>;
 
     /// # Branch Equal (RV32I)
     /// 
@@ -439,7 +439,7 @@ pub trait RV64GCUser<T> {
     /// register rs1 into register rd (assembler pseudoinstruction SEXT.W).
     /// 
     /// `x[rd] = sext((x[rs1] + sext(immediate))[31:0])`
-    fn addiw(&mut self, rd: Register, rsq: Register, imm: u32) 
+    fn addiw(&mut self, rd: Register, rs1: Register, imm: u32) 
         -> Result<T, Self::Error>;
         
     /// # Shift Left Logical Immediate Word (RV64I)
@@ -449,7 +449,7 @@ pub trait RV64GCUser<T> {
     /// Encodings with $imm[5] neq 0$ are reserved.
     /// 
     /// `x[rd] = sext((x[rs1] << shamt)[31:0])`
-    fn slliw(&mut self, rd: Register, rsq: Register, shamt: i32) 
+    fn slliw(&mut self, rd: Register, rs1: Register, shamt: i32) 
         -> Result<T, Self::Error>;
 
     /// # Shift Right Logical Immediate Word (RV64I)
@@ -459,7 +459,7 @@ pub trait RV64GCUser<T> {
     /// Encodings with $imm[5] neq 0$ are reserved.
     /// 
     /// `x[rd] = sext(x[rs1][31:0] >>u shamt)`
-    fn srliw(&mut self, rd: Register, rsq: Register, shamt: i32) 
+    fn srliw(&mut self, rd: Register, rs1: Register, shamt: i32) 
         -> Result<T, Self::Error>;
 
     /// # Shift Right Arithmetical Immediate Word (RV64I)
@@ -469,7 +469,7 @@ pub trait RV64GCUser<T> {
     /// Encodings with $imm[5] neq 0$ are reserved.
     /// 
     /// `x[rd] = sext(x[rs1][31:0] >>s shamt)`
-    fn sraiw(&mut self, rd: Register, rsq: Register, shamt: i32) 
+    fn sraiw(&mut self, rd: Register, rs1: Register, shamt: i32) 
         -> Result<T, Self::Error>;
 
     /// # Add Word (RV64I)

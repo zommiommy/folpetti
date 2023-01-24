@@ -202,8 +202,8 @@ impl RV64GCUser<usize> for RV64GCPrint {
         Ok(4)
     }
     
-    fn jalr(&mut self, rd: Register, imm: i32) -> Result<usize, Self::Error> {
-        println!("jalr {:?} {}", rd, imm);
+    fn jalr(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<usize, Self::Error> {
+        println!("jalr {:?} {:?} {}", rd, rs1, imm);
         Ok(4)
     }
     

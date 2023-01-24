@@ -18,8 +18,8 @@ fn main() {
     // if it's relocatable add an offset so we don't map in the 0x0 page
     // so we catch null derefs
     let vaddr_offset = if elf.header.e_type == ET_DYN {
-        //0x0000004000000000
-        0x0000004000005170
+        0x0000004000000000
+        //0x0000004000005170
     } else {
         0x0
     };
@@ -118,7 +118,7 @@ fn main() {
     start_emu.core.pc = start_address + vaddr_offset as u64;
     start_emu.core.write_reg(
         Register::Sp, stack_top_addr.0 as u64 + sp.0 as u64
-    ).unwrap();
+    );
 
 
     // Run my beauftiful intellectuals, run

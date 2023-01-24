@@ -343,7 +343,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
             } = Itype::from(inst);
             match funct3 {
                 0b000 => {
-                    user.jalr(rd.into(), imm)
+                    user.jalr(rd.into(), rs1.into(), imm)
                 }
                 _ => unimplemented!("Unexpected 0b1100111"),
             }
