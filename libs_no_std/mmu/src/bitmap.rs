@@ -16,9 +16,6 @@ impl Bitmap {
     /// This is needed to have tight and correct bound checking on the values
     /// without the overhead of **also** checking the len.
     pub fn new(size: usize) -> Result<Self, usize> {
-        if size % BITS_IN_WORD != 0 {
-            return Err(size);
-        } 
         Ok(Bitmap(vec![0; size / BITS_IN_WORD]))
     }
 
@@ -48,9 +45,20 @@ impl Bitmap {
         self.0[index / BITS_IN_WORD] = 0;
     }
 
+    #[inline]
+    pub fn resize(&mut self, size: usize, value: bool) {
+        let fill_value = if value {
+            usize::MAX
+        } else {
+            0
+        };
+        
+        self.0.resize((size + BITS_IN_WORD - 1)  / BITS_IN_WORD, fill_value);
+    }
+
     /// Clean the bitmap (as in reset everything to zero)
     #[inline]
     pub fn clear(&mut self) {
-        self.0.clear()
+        self.0.fill(0)
     }
 }

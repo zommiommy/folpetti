@@ -76,6 +76,10 @@ impl TryFrom<u8> for PermField {
     }
 }
 
+// /////////////////////////////////////////////////////////////////////////////
+// Colleciton of perms
+// /////////////////////////////////////////////////////////////////////////////
+
 /// A permissions byte which corresponds to a memory byte and defines the
 /// permissions it has. This is a fancy way to have an u8 bitmap for the 
 /// various permissions but it's less prone to bugs thanks to rust pedantic

@@ -3,6 +3,7 @@ use core::fmt::{Debug, Display, LowerHex, Binary};
 use core::ops::*;
 use core::sync::atomic::*;
 use core::num::*;
+use crate::Broadcast;
 
 /// Trait of operations possible on both Signed and Unsiged words
 pub trait Number: Sized + Send + Sync +
@@ -22,9 +23,9 @@ pub trait Number: Sized + Send + Sync +
     Sub<Output=Self> + SubAssign<Self> +
 {
     /// Number of bits in the word
-    const BITS: u8;
+    const BITS: usize;
     /// Number of bytes in the word
-    const BYTES: u8;
+    const BYTES: usize;
     /// The byte array form of the value = `[u8; Self::BYTES]`
     type BytesForm;
     /// Zero represented by `Self`
@@ -292,7 +293,7 @@ pub trait NonZero: Sized {
 }
 
 /// Unsigned word
-pub trait Word: Number {
+pub trait Word: Number + Broadcast<u8> {
     /// The signed variant of the word
     type SignedWord: SignedWord<UnsignedWord=Self>;
     /// The atomically modifiable variant of the word
@@ -467,8 +468,8 @@ macro_rules! impl_Number {
     ($ty:ty) => {
         
 impl Number for $ty {
-    const BITS: u8 = <$ty>::BITS as _;
-    const BYTES: u8 = core::mem::size_of::<$ty>() as _;
+    const BITS: usize = <$ty>::BITS as _;
+    const BYTES: usize = core::mem::size_of::<$ty>() as _;
     type BytesForm = [u8; core::mem::size_of::<$ty>()];
     const MIN: Self = <$ty>::MIN as _;
     const MAX: Self = <$ty>::MAX as _;

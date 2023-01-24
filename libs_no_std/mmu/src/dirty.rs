@@ -51,6 +51,18 @@ impl DirtyState {
         })
     }
 
+    #[inline]
+    pub fn resize(&mut self, size: usize) {
+        self.dirty_bitmap.resize(size, false);
+        self.len = size;
+    }
+
+    #[inline]
+    pub fn clear(&mut self)  {
+        self.dirty_indices.clear();
+        self.dirty_bitmap.clear();
+    }
+
     /// Return the size with which the dirty state was initialized
     #[inline]
     pub fn len(&self) -> usize {

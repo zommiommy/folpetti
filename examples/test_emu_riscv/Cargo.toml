@@ -8,5 +8,5 @@ edition = "2021"
 [dependencies]
 goblin = "0.5.4"
 mmu = {path="../../libs_no_std/mmu"}
-emu = {path="../../libs_no_std/emu"}
+emu = {path="../../libs_no_std/emu", features = ["std"]}
 #diss = {path="../../libs_no_std/diss", features = ["std"]}

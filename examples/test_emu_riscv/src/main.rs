@@ -1,7 +1,9 @@
 
+use goblin::elf64::header::*;
 use mmu::{Mmu, Perm, PermField, VirtAddr};
 use emu::riscv64gc::LinuxEmu;
 use goblin::Object;
+use goblin::elf64::program_header::*;
 
 fn main() {
     let file_bytes = std::fs::read("../test_fuzz/target/riscv64gc-unknown-linux-gnu/debug/test_fuzz").unwrap();
@@ -12,21 +14,26 @@ fn main() {
         _ => panic!(),
     };
 
-    const EM_RISCV: u16 = 243;
     assert_eq!(elf.header.e_machine, EM_RISCV);
+    // if it's relocatable add an offset so we don't map in the 0x0 page
+    // so we catch null derefs
+    let vaddr_offset = if elf.header.e_type == ET_DYN {
+        0x1000
+    } else {
+        0x0
+    };
 
     let mut mmu = <Mmu<
             256, // DIRTY_BLOCK_SIZE
             true, // RAW
             true, // TAINT
-        >>::new().unwrap();
+        >>::new();
 
     // LOAD ALL THE SEGMENTS
     for segment in elf.program_headers {
         println!("{:?}", segment);
 
         let mut perms = Perm::default();
-
         if segment.is_read() {
             perms |= PermField::Read;
         }
@@ -36,26 +43,20 @@ fn main() {
         if segment.is_executable() {
             perms |= PermField::Executable;
         }
-
-        unsafe {
-            // data from file
-            mmu.write_from_slice(
-                VirtAddr(segment.vm_range().start),
-                &file_bytes[segment.file_range()],
-                Some(perms),
+        if segment.p_type == PT_LOAD {
+            println!("{:x?} {:?}", segment.vm_range(), perms);
+            let (_idx, seg) = mmu.allocate_segment(
+                VirtAddr(vaddr_offset + segment.vm_range().start),
+                segment.vm_range().len(), 
+                perms
             ).unwrap();
-        }
 
-        // padded with zeros if needed
-        let padding_length = segment.vm_range().len() - segment.file_range().len();
-        if segment.vm_range().len() > segment.file_range().len() {
-            unsafe{
-                mmu.write_from_slice(
-                    VirtAddr(
-                        segment.vm_range().start + segment.file_range().end
-                    ), 
-                    &vec![0; padding_length], 
-                    Some(perms),
+
+            // data from file
+            unsafe {
+                seg.write_from_slice(
+                    VirtAddr(0),
+                    &file_bytes[segment.file_range()],
                 ).unwrap();
             }
         }
@@ -69,7 +70,7 @@ fn main() {
     let start_address = start_symbol.st_value;
 
     let mut start_emu = LinuxEmu::new(mmu); 
-    start_emu.core.pc = start_address;
+    start_emu.core.pc = start_address + vaddr_offset as u64;
 
     let mut emu = start_emu.fork();
     println!("{:?}", emu.run());
