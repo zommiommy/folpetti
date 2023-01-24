@@ -10,3 +10,7 @@ traits = {path="../traits"}
 
 # [lib]
 # crate-type = ["rlib", "staticlib"]
+
+[features]
+std = []
+default = []

@@ -16,7 +16,7 @@ impl Bitmap {
     /// This is needed to have tight and correct bound checking on the values
     /// without the overhead of **also** checking the len.
     pub fn new(size: usize) -> Result<Self, usize> {
-        Ok(Bitmap(vec![0; size / BITS_IN_WORD]))
+        Ok(Bitmap(vec![0; (size + BITS_IN_WORD - 1) / BITS_IN_WORD]))
     }
 
     /// Get the bit of index `index`

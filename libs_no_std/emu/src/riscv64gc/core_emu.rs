@@ -401,7 +401,7 @@ impl RV64GCUser<()> for CoreEmu {
         let addr = self.read_reg(rd).wrapping_add(imm);
         let res = self.mem.read(VirtAddr(addr as usize))?;
         self.write_reg(rd, res)?;
-        self.pc += 2;
+        self.pc += 4;
         Ok(())
     }
 
@@ -1510,7 +1510,10 @@ impl RV64GCUser<()> for CoreEmu {
     fn c_ldsp(&mut self, rd: Register, uimm: u8) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("c_ldsp {:?} {}", rd, uimm);
-        todo!();
+        let addr = self.read_reg(Register::Sp).wrapping_add(uimm as u64);
+        let res = self.mem.read(VirtAddr(addr as usize))?;
+        self.write_reg(rd, res)?;
+        self.pc += 2;
         Ok(())
     }
 

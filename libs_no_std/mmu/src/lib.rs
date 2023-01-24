@@ -11,10 +11,13 @@
 //! 
 //! TODO: add a from_core_dump for memory
 //! Prob we need to to set coredump_filter to 255 to dump everything
-#![no_std]
+#![cfg_attr(not(feature="std"), no_std)]
 #![feature(atomic_from_mut)]
 #![feature(core_intrinsics)]
 #![feature(allocator_api)]
+
+#[cfg(feature="std")]
+extern crate std;
 
 extern crate alloc;
 
