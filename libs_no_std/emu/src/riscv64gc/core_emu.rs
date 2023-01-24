@@ -174,6 +174,8 @@ impl CoreEmu {
 impl RV64GCUser<()> for CoreEmu {
     type Error = CoreEmuError;
     fn lui(&mut self, rd: Register, imm: u32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("lui {:?} {}", rd, imm);
         todo!();
         Ok(())
     }
@@ -195,11 +197,14 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn slti(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
-        todo!();
+        #[cfg(feature="dbg_prints")]
+        println!("slti {:?} {:?} {}", rd, rs1, imm);
         Ok(())
     }
 
     fn sltiu(&mut self, rd: Register, rs1: Register, imm: u32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("sltiu {:?} {:?} {}", rd, rs1, imm);
         todo!();
         Ok(())
     }
@@ -269,16 +274,22 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn sll(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("sll {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn slt(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("slt {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn sltu(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("sltu {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
@@ -292,11 +303,15 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn srl(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("srl {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn sra(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("sra {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
@@ -318,86 +333,123 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn csrrw(&mut self, rd: Register, rs1: Register, offset: u32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("csrrw {:?} {:?} {}", rd, rs1, offset);
         todo!();
         Ok(())
     }
 
     fn csrrs(&mut self, rd: Register, rs1: Register, offset: u32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("csrrs {:?} {:?} {}", rd, rs1, offset);
         todo!();
         Ok(())
     }
 
     fn csrrc(&mut self, rd: Register, rs1: Register, offset: u32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("csrrc {:?} {:?} {}", rd, rs1, offset);
         todo!();
         Ok(())
     }
 
     fn csrrwi(&mut self, rd: Register, zimm: u8, offset: u32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("csrrwi {:?} {} {}", rd, zimm, offset);
         todo!();
         Ok(())
     }
 
     fn csrrsi(&mut self, rd: Register, zimm: u8, offset: u32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("csrrsi {:?} {} {}", rd, zimm, offset);
         todo!();
         Ok(())
     }
 
     fn csrrci(&mut self, rd: Register, zimm: u8, offset: u32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("csrrci {:?} {} {}", rd, zimm, offset);
         todo!();
         Ok(())
     }
 
     fn lb(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("lb {:?} {}", rd, imm);
         todo!();
         Ok(())
     }
 
     fn lh(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("lh {:?} {}", rd, imm);
         todo!();
         Ok(())
     }
 
     fn lw(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("l2 {:?} {}", rd, imm);
         todo!();
         Ok(())
     }
 
     fn ld(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
-        todo!();
+        #[cfg(feature="dbg_prints")]
+        println!("ld {:?} {}", rd, imm);
+        let addr = self.read_reg(rd).wrapping_add(imm);
+        let res = self.mem.read(VirtAddr(addr as usize))?;
+        self.write_reg(rd, res)?;
+        self.pc += 2;
         Ok(())
     }
 
     fn lbu(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("lbu {:?} {}", rd, imm);
         todo!();
         Ok(())
     }
 
     fn lhu(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("lhu {:?} {}", rd, imm);
         todo!();
         Ok(())
     }
 
     fn lwu(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("lwu {:?} {}", rd, imm);
         todo!();
         Ok(())
     }
 
     fn sb(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("sb {:?} {:?} {}", rs1, rs2, imm);
         todo!();
         Ok(())
     }
 
     fn sh(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("sh {:?} {:?} {}", rs1, rs2, imm);
         todo!();
         Ok(())
     }
 
     fn sw(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("sw {:?} {:?} {}", rs1, rs2, imm);
         todo!();
         Ok(())
     }
 
     fn sd(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("sd {:?} {:?} {}", rs1, rs2, imm);
         todo!();
         Ok(())
     }
@@ -413,148 +465,206 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn jalr(&mut self, rd: Register, imm: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("jalr {:?} {}", rd, imm);
         todo!();
         Ok(())
     }
 
     fn beq(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("beq {:?} {:?} {}", rs1, rs2, imm);
         todo!();
         Ok(())
     }
 
     fn bne(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("bne {:?} {:?} {}", rs1, rs2, imm);
         todo!();
         Ok(())
     }
 
     fn blt(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("blt {:?} {:?} {}", rs1, rs2, imm);
         todo!();
         Ok(())
     }
 
     fn bge(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("bge {:?} {:?} {}", rs1, rs2, imm);
         todo!();
         Ok(())
     }
 
     fn bltu(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("bltu {:?} {:?} {}", rs1, rs2, imm);
         todo!();
         Ok(())
     }
 
     fn bgeu(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("bgeu {:?} {:?} {}", rs1, rs2, imm);
         todo!();
         Ok(())
     }
 
     fn addiw(&mut self, rd: Register, rsq: Register, imm: u32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("addiw {:?} {:?} {}", rd, rsq, imm);
         todo!();
         Ok(())
     }
 
     fn slliw(&mut self, rd: Register, rsq: Register, shamt: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("slliw {:?} {:?} {}", rd, rsq, shamt);
         todo!();
         Ok(())
     }
 
     fn srliw(&mut self, rd: Register, rsq: Register, shamt: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("srliw {:?} {:?} {}", rd, rsq, shamt);
         todo!();
         Ok(())
     }
 
     fn sraiw(&mut self, rd: Register, rsq: Register, shamt: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("sraiw {:?} {:?} {}", rd, rsq, shamt);
         todo!();
         Ok(())
     }
 
     fn addw(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("addw {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn subw(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("subw {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn sllw(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("sllw {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn srlw(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("srlw {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn sraw(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("sraw {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn mul(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("mul {:?} {:?} {:?}", rd, rs1, rs2);
         self.write_reg(rd, self.read_reg(rs1).wrapping_mul(self.read_reg(rs2)))?;
         self.pc += 4;
         Ok(())
     }
 
     fn mulh(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("mulh {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn mulhsu(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("mulhsu {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn mulhu(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("mulhu {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn div(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("div {:?} {:?} {:?}", rd, rs1, rs2);
         self.write_reg(rd, self.read_reg(rs1).wrapping_div(self.read_reg(rs2)))?;
         self.pc += 4;
         Ok(())
     }
 
     fn divu(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("divu {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn rem(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("rem {:?} {:?} {:?}", rd, rs1, rs2);
         self.write_reg(rd, self.read_reg(rs1).wrapping_rem(self.read_reg(rs2)))?;
         Ok(())
     }
 
     fn remu(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("remu {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn mulw(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("mulw {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn divw(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("divw {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn divuw(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("divuw {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn remw(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("remw {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
 
     fn remuw(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("remuw {:?} {:?} {:?}", rd, rs1, rs2);
         todo!();
         Ok(())
     }
@@ -1169,26 +1279,36 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn c_addi4spn(&mut self, rd: Register, uimm: u16) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_addi4spn {:?} {}", rd, uimm);
         todo!();
         Ok(())
     }
 
     fn c_fld(&mut self, rd: Register, rs1: Register, imm: u16) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_fld {:?} {:?} {}", rd, rs1, imm);
         todo!();
         Ok(())
     }
 
     fn c_lw(&mut self, rd: Register, rs1: Register, uimm: u16) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_lw {:?} {:?} {}", rd, rs1, uimm);
         todo!();
         Ok(())
     }
 
     fn c_flw(&mut self, rd: FloatRegister, rs1: Register, uimm: u16) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_flw {:?} {:?} {}", rd, rs1, uimm);
         todo!();
         Ok(())
     }
 
     fn c_ld(&mut self, rd: Register, rs1: Register, uimm: u16) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_ld {:?} {:?} {}", rd, rs1, uimm);
         let addr = self.read_reg(rs1).wrapping_add(uimm as u64);
         let res = self.mem.read(VirtAddr(addr as usize))?;
         self.write_reg(rd, res)?;
@@ -1202,140 +1322,194 @@ impl RV64GCUser<()> for CoreEmu {
         rs2: FloatRegister,
         uimm: u16,
     ) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_fsd {:?} {:?} {}", rs1, rs2, uimm);
         todo!();
         Ok(())
     }
 
     fn c_sw(&mut self, rs1: Register, rs2: Register, uimm: u16) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_sw {:?} {:?} {}", rs1, rs2, uimm);
         todo!();
         Ok(())
     }
 
     fn c_fsw(&mut self, rs1: Register, rs2: FloatRegister, uimm: u8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_fsw {:?} {:?} {}", rs1, rs2, uimm);
         todo!();
         Ok(())
     }
 
     fn c_sd(&mut self, rs1: Register, rs2: Register, uimm: u16) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_sd {:?} {:?} {}", rs1, rs2, uimm);
         todo!();
         Ok(())
     }
 
     fn c_addi(&mut self, rd: Register, imm: i8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_addi {:?} {}", rd, imm);
         todo!();
         Ok(())
     }
 
     fn c_jal(&mut self, imm: u16) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_jal {}", imm);
         todo!();
         Ok(())
     }
 
     fn c_addiw(&mut self, rd: Register, imm: i8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_addiw {:?} {}", rd, imm);
         todo!();
         Ok(())
     }
 
     fn c_li(&mut self, rd: Register, imm: i8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_li {:?} {}", rd, imm);
         todo!();
         Ok(())
     }
 
     fn c_addi16sp(&mut self, imm: i8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_addi16sp {}", imm);
         todo!();
         Ok(())
     }
 
     fn c_lui(&mut self, rd: Register, imm: i8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_lui {:?} {}", rd, imm);
         todo!();
         Ok(())
     }
 
     fn c_srli(&mut self, rd: Register, uimm: u8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_srli {:?} {}", rd, uimm);
         todo!();
         Ok(())
     }
 
     fn c_srai(&mut self, rd: Register, uimm: u8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_srai {:?} {}", rd, uimm);
         todo!();
         Ok(())
     }
 
     fn c_andi(&mut self, rd: Register, uimm: u8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_andi {:?} {}", rd, uimm);
         todo!();
         Ok(())
     }
 
     fn c_sub(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_sub {:?} {:?}", rd, rs2);
         self.write_reg(rd, self.read_reg(rd).wrapping_sub(self.read_reg(rs2)))?;
         self.pc += 2;
         Ok(())
     }
 
     fn c_xor(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_xor {:?} {:?}", rd, rs2);
         self.write_reg(rd, self.read_reg(rd) ^ self.read_reg(rs2))?;
         self.pc += 2;
         Ok(())
     }
 
     fn c_or(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_or {:?} {:?}", rd, rs2);
         self.write_reg(rd, self.read_reg(rd) | self.read_reg(rs2))?;
         self.pc += 2;
         Ok(())
     }
 
     fn c_and(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_and {:?} {:?}", rd, rs2);
         self.write_reg(rd, self.read_reg(rd) & self.read_reg(rs2))?;
         self.pc += 2;
         Ok(())
     }
 
     fn c_subw(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_subw {:?} {:?}", rd, rs2);
         todo!();
         Ok(())
     }
 
     fn c_addw(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_addw {:?} {:?}", rd, rs2);
         todo!();
         Ok(())
     }
 
     fn c_j(&mut self, imm: i16) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_j {}", imm);
         todo!();
         Ok(())
     }
 
     fn c_beqz(&mut self, rs1: Register, offset: u16) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_beqz {:?} {}", rs1, offset);
         todo!();
         Ok(())
     }
 
     fn c_bnez(&mut self, rs1: Register, offset: u16) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_bnez {:?} {}", rs1, offset);
         todo!();
         Ok(())
     }
 
     fn c_slli(&mut self, rd: Register, uimm: u8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_slli {:?} {}", rd, uimm);
         todo!();
         Ok(())
     }
 
     fn c_fldsp(&mut self, rd: FloatRegister, uimm: u8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_fldsp {:?} {}", rd, uimm);
         todo!();
         Ok(())
     }
 
     fn c_lwsp(&mut self, rd: Register, uimm: u8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_lwsp {:?} {}", rd, uimm);
         todo!();
         Ok(())
     }
 
     fn c_flwsp(&mut self, rd: Register, uimm: u8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_flwsp {:?} {}", rd, uimm);
         todo!();
         Ok(())
     }
 
     fn c_ldsp(&mut self, rd: Register, uimm: u8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_ldsp {:?} {}", rd, uimm);
         todo!();
         Ok(())
     }
@@ -1356,6 +1530,8 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn c_jalr(&mut self, rs1: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_jalr {:?}", rs1);
         todo!();
         Ok(())
     }
@@ -1369,47 +1545,67 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn c_fsdsp(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_fsdsp {:?} {:?}", rd, rs2);
         todo!();
         Ok(())
     }
 
     fn c_swsp(&mut self, rs2: Register, uimm: u8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_swsp {:?} {}", rs2, uimm);
         todo!();
         Ok(())
     }
 
     fn c_fswsp(&mut self, rs2: FloatRegister, uimm: u8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_fswsp {:?} {}", rs2, uimm);
         todo!();
         Ok(())
     }
 
     fn c_sdsp(&mut self, rs2: Register, uimm: u8) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_sdsp {:?} {}", rs2, uimm);
         todo!();
         Ok(())
     }
 
     fn fence(&mut self) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("fence");
         self.pc += 4;            
         Err(CoreEmuError::Yield)
     }
     fn fence_i(&mut self) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("fence_i");
         // CHECK
         self.pc += 4;            
         Err(CoreEmuError::Yield)
     }
     fn ecall(&mut self) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("ecall");
         self.pc += 4;            
         Err(CoreEmuError::Syscall)
     }
     fn ebreak(&mut self) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("ebreak");
         self.pc += 4;            
         Err(CoreEmuError::Breakpoint)
     }
     fn c_nop(&mut self) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_nop");
         self.pc += 2;            
         Ok(())
     }
     fn c_ebreak(&mut self) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_ebreak");
         self.pc += 2;            
         Err(CoreEmuError::Breakpoint)
     }
