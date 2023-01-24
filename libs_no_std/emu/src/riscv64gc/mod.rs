@@ -1,3 +1,5 @@
+pub use diss::riscv64gc::*;
+
 mod core_emu;
 pub use core_emu::*;
 

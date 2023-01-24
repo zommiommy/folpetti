@@ -12,4 +12,5 @@ mmu = {path="../mmu"}
 
 [features]
 std = []
+dbg_prints = ["std"]
 default = []

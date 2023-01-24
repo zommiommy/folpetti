@@ -42,7 +42,7 @@ impl CoreEmu {
         }
     }
 
-    #[feature(std)]
+    #[cfg(feature="std")]
     pub fn debug(&self) {
         println!("PC: {:016x} Zero: {:016x}", 
             self.pc, 
@@ -159,7 +159,7 @@ impl CoreEmu {
                 return e.into();
             }
             let inst: u32 = inst.unwrap();
-            #[cfg(feature="std")]
+            #[cfg(feature="dbg_prints")]
             {
                 println!("\n{:016x} {:02x?}", self.pc, &inst.to_le_bytes());
                 self.debug();
@@ -179,7 +179,7 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn auipc(&mut self, rd: Register, imm: u32) -> Result<(), Self::Error> {
-        #[cfg(feature="std")]
+        #[cfg(feature="dbg_prints")]
         println!("auipc {:?} {}", rd, imm);
         self.write_reg(rd, self.pc.wrapping_add_signed(imm as i64));
         self.pc += 4;
@@ -187,6 +187,8 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn addi(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("addi {:?} {:?} {}", rd, rs1, imm);
         self.write_reg(rd, self.read_reg(rs1).wrapping_add_signed(imm as i64))?;
         self.pc += 4;
         Ok(())
@@ -203,48 +205,64 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn xori(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("xori {:?} {:?} {}", rd, rs1, imm);
         self.write_reg(rd, self.read_reg(rs1) ^ imm as i64 as u64)?;
         self.pc += 4;
         Ok(())
     }
 
     fn ori(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("ori {:?} {:?} {}", rd, rs1, imm);
         self.write_reg(rd, self.read_reg(rs1) | imm as i64 as u64)?;
         self.pc += 4;
         Ok(())
     }
 
     fn andi(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("andi {:?} {:?} {}", rd, rs1, imm);
         self.write_reg(rd, self.read_reg(rs1) & imm as i64 as u64)?;
         self.pc += 4;
         Ok(())
     }
 
     fn slli(&mut self, rd: Register, rs1: Register, shamt: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("slli {:?} {:?} {}", rd, rs1, shamt);
         self.write_reg(rd, self.read_reg(rs1).overflow_shl(shamt as u32 as u64))?;
         self.pc += 4;
         Ok(())
     }
 
     fn srli(&mut self, rd: Register, rs1: Register, shamt: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("srli {:?} {:?} {}", rd, rs1, shamt);
         self.write_reg(rd, self.read_reg(rs1).overflow_shr(shamt as u32 as u64))?;
         self.pc += 4;
         Ok(())
     }
 
     fn srai(&mut self, rd: Register, rs1: Register, shamt: i32) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("srai {:?} {:?} {}", rd, rs1, shamt);
         self.write_reg(rd, self.read_reg(rs1).overflow_sar(shamt as u32 as u64))?;
         self.pc += 4;
         Ok(())
     }
 
     fn add(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("add {:?} {:?} {:?}", rd, rs1, rs2);
         self.write_reg(rd, self.read_reg(rs1).wrapping_add(self.read_reg(rs2)))?;
         self.pc += 4;
         Ok(())
     }
 
     fn sub(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("sub {:?} {:?} {:?}", rd, rs1, rs2);
         self.write_reg(rd, self.read_reg(rs1).wrapping_sub(self.read_reg(rs2)))?;
         self.pc += 4;
         Ok(())
@@ -266,6 +284,8 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn xor(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("xor {:?} {:?} {:?}", rd, rs1, rs2);
         self.write_reg(rd, self.read_reg(rs1) ^ self.read_reg(rs2))?;
         self.pc += 4;
         Ok(())
@@ -282,12 +302,16 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn or(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("or {:?} {:?} {:?}", rd, rs1, rs2);
         self.write_reg(rd, self.read_reg(rs1) | self.read_reg(rs2))?;
         self.pc += 4;
         Ok(())
     }
 
     fn and(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("and {:?} {:?} {:?}", rd, rs1, rs2);
         self.write_reg(rd, self.read_reg(rs1) & self.read_reg(rs2))?;
         self.pc += 4;
         Ok(())
@@ -379,7 +403,7 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn jal(&mut self, rd: Register, imm: i32) -> Result<(), Self::Error> {
-        #[cfg(feature="std")]
+        #[cfg(feature="dbg_prints")]
         println!("jal {:?} {}", rd, imm);
         // ret addr
         self.write_reg(rd, self.pc.wrapping_add(4));
@@ -1317,11 +1341,15 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn c_jr(&mut self, rs1: Register) -> Result<(), Self::Error> {
-        todo!();
+        #[cfg(feature="dbg_prints")]
+        println!("c_jr {:?}", rs1);
+        self.pc = self.read_reg(rs1);
         Ok(())
     }
 
     fn c_mv(&mut self, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_mv {:?} {:?}", rs1, rs2);
         self.write_reg(rs1, self.read_reg(rs2))?;
         self.pc += 2;
         Ok(())
@@ -1333,6 +1361,8 @@ impl RV64GCUser<()> for CoreEmu {
     }
 
     fn c_add(&mut self, rd: Register, rs2: Register) -> Result<(), Self::Error> {
+        #[cfg(feature="dbg_prints")]
+        println!("c_add {:?} {:?}", rd, rs2);
         self.write_reg(rd, self.read_reg(rd).wrapping_add(self.read_reg(rs2)))?;
         self.pc += 2;
         Ok(())

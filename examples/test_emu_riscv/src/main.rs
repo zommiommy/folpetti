@@ -1,7 +1,7 @@
 
 use goblin::elf64::header::*;
 use mmu::{Mmu, Perm, PermField, VirtAddr};
-use emu::riscv64gc::LinuxEmu;
+use emu::riscv64gc::*;
 use goblin::Object;
 use goblin::elf64::program_header::*;
 
@@ -62,6 +62,15 @@ fn main() {
         }
     }
 
+    // add a stack segment of 1MB
+    let (stack_idx, _seg) = mmu.allocate_segment(
+        VirtAddr(0x7fff_ffff_0000_0000),
+        1 << 6, 
+        PermField::ReadAfterWrite | PermField::Write,
+    ).unwrap();
+    mmu.stack_segment_idx = stack_idx;
+
+
     // FIND THE START FUNCTION and load its address in the program counter
     let start_symbol = elf.syms.iter().find(|x| 
         elf.strtab.get_at(x.st_name).unwrap() == "_start"
@@ -70,8 +79,15 @@ fn main() {
     let start_address = start_symbol.st_value;
 
     let mut start_emu = LinuxEmu::new(mmu); 
-    start_emu.core.pc = start_address + vaddr_offset as u64;
 
+    // setup the emulator registers
+    start_emu.core.pc = start_address + vaddr_offset as u64;
+    start_emu.core.write_reg(Register::Sp,  
+        (&start_emu.core.mem.segments[stack_idx]).0.0 as u64
+    ).unwrap();
+
+
+    // Run my beauftiful intellectuals, run
     let mut emu = start_emu.fork();
     println!("{:?}", emu.run());
     emu.reset(&start_emu);
