@@ -70,10 +70,10 @@ fn main() {
     }
 
     let stack_base_addr = VirtAddr(0x7fff_ffff_0000_0000);
-    let stack_size = 8 << 10; // 1KB
+    let stack_size = 8 << 20; // 1MB
     let stack_top_addr = VirtAddr(stack_base_addr.0 - stack_size);
 
-    let prog_name = b"my_awesome_prog\0";
+    let prog_name = b"test_fuzz\0";
     let prog_name_addr = VirtAddr(stack_base_addr.0 + 0x1000);
 
     let (_, prog_name_seg) = mmu.allocate_segment(

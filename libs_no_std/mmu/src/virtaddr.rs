@@ -1,9 +1,15 @@
 use core::ops::*;
 
 #[repr(transparent)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 /// A strongly typed guest address 
 pub struct VirtAddr(pub usize);
+
+impl core::fmt::Debug for VirtAddr {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_fmt(format_args!("VirtAddr({:016x})", self.0))
+    }
+}
 
 impl Add<usize> for VirtAddr {
     type Output = VirtAddr;

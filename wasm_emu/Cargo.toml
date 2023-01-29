@@ -1,0 +1,18 @@
+[package]
+name = "wasmemu"
+version = "0.1.0"
+authors = ["Tommaso Fontana <tommaso.fontana.96@gmail.com>"]
+edition = "2018"
+default-run = "test"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[lib]
+name = "wasmemu"
+path = "src/lib.rs"
+
+[[bin]]
+name = "test"
+path = "src/bin.rs"

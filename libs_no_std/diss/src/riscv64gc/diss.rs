@@ -225,12 +225,12 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
             let rs1 = Register::from_prime(rs1_prime);
 
             let offset = ((offset1 & 0b1) << 5) 
-                | ((offset1 & 0b110) >> 1) 
-                | ((offset1 & 0b11000) << 2)
-                | ((offset2 & 0b11) << 2)
-                | ((offset2 & 0b100) << 7);
+                | (offset1 & 0b110) 
+                | ((offset1 & 0b11000) << 3)
+                | ((offset2 & 0b11) << 3)
+                | ((offset2 & 0b100) << 5);
 
-            user.c_beqz(rs1, offset)
+            user.c_beqz(rs1, offset.sign_extend(9) as i16)
         }
         0b111 => {
             let CBtype{
@@ -241,12 +241,12 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
             let rs1 = Register::from_prime(rs1_prime);
 
             let offset = ((offset1 & 0b1) << 5) 
-                | ((offset1 & 0b110) >> 1) 
-                | ((offset1 & 0b11000) << 2)
-                | ((offset2 & 0b11) << 2)
-                | ((offset2 & 0b100) << 7);
+                | (offset1 & 0b110) 
+                | ((offset1 & 0b11000) << 3)
+                | ((offset2 & 0b11) << 3)
+                | ((offset2 & 0b100) << 5);
 
-            user.c_bnez(rs1, offset)
+            user.c_bnez(rs1, offset.sign_extend(9) as i16)
         }
         _ => unreachable!(),
     }
@@ -255,6 +255,16 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
 fn diss_riscv64gc_2b_q2_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16) 
     -> Result<T, User::Error> {
     match inst.extract_bitfield(13, 16) {
+        0b000 => {
+            let CItype{
+                imm2,
+                rd_rs1,
+                imm1,
+            } = CItype::from(inst);
+            let rd = Register::from(rd_rs1 as u32);
+            let shamt = ((imm2 & 1) << 5) | imm1;
+            user.c_slli(rd, shamt as u8)
+        }
         0b011 => {
             let CRtype{
                 funct4,

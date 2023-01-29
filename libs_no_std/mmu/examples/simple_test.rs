@@ -1,6 +1,7 @@
-use mmu::*;
+//use mmu::*;
 
 fn main() {
+    /*
     let mut mmu = Mmu::<
         256,    // dirty block size
         true,   // RAW
@@ -39,6 +40,7 @@ fn main() {
     // check that the state was **actually** resetted
     assert!(mmu2.read::<u16>(addr + 8).is_err());
     assert_eq!(1337, mmu.read::<u64>(addr).unwrap());
+     */
 }
 
 

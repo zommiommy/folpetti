@@ -13,6 +13,8 @@ pub struct Mmu<
     pub segments: alloc::vec::Vec<(VirtAddr, SegmentMmu<DIRTY_BLOCK_SIZE, RAW, TAINT>)>,
     pub data_segment_idx: usize,
     pub stack_segment_idx: usize,
+    pub segments_alloc_addr: VirtAddr,
+    pub segment_redzone: usize,
 } 
 
 impl<
@@ -28,7 +30,9 @@ impl<
         Self { 
             segments: alloc::vec::Vec::with_capacity(10), 
             data_segment_idx: 0, 
-            stack_segment_idx: 0, 
+            stack_segment_idx: 0,
+            segments_alloc_addr: VirtAddr(0x0000004000000000),
+            segment_redzone: 0x1000,
         }
     }
 
@@ -61,6 +65,8 @@ impl<
             segments: forked_segments,
             data_segment_idx: self.data_segment_idx,
             stack_segment_idx: self.stack_segment_idx,
+            segments_alloc_addr: self.segments_alloc_addr,
+            segment_redzone: self.segment_redzone,
         }
     }
 
@@ -112,9 +118,17 @@ impl<
     RAW,
     TAINT,
 > {
-    pub fn allocate_segment(&mut self, addr: VirtAddr, size: usize, perm: Perm) -> Result<(usize, &mut SegmentMmu<DIRTY_BLOCK_SIZE, RAW, TAINT>), MmuError> {
+    pub fn allocate_segment(&mut self, addr: Option<VirtAddr>, size: usize, perm: Perm) -> Result<(usize, &mut SegmentMmu<DIRTY_BLOCK_SIZE, RAW, TAINT>), MmuError> {
         let new_segment = <SegmentMmu<DIRTY_BLOCK_SIZE, RAW, TAINT>>::new(size, perm)?;
         let idx = self.segments.len();
+        
+        let addr = match addr {
+            Some(addr) => addr,
+            None => {
+                
+            }
+        };
+
         self.segments.push((addr, new_segment));
         self.validate();
         Ok((idx, &mut self.segments[idx].1))

@@ -377,21 +377,30 @@ impl RV64GCUser<()> for CoreEmu {
     fn lb(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("lb {:?} {}", rd, imm);
-        todo!();
+        let addr = self.read_reg(rd).wrapping_add(imm);
+        let res: u8= self.mem.read(VirtAddr(addr as usize))?;
+        self.write_reg(rd, res as i8 as i64 as u64);
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
     fn lh(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("lh {:?} {}", rd, imm);
-        todo!();
+        let addr = self.read_reg(rd).wrapping_add(imm);
+        let res: u16 = self.mem.read(VirtAddr(addr as usize))?;
+        self.write_reg(rd, res as i16 as i64 as u64);
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
     fn lw(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
-        println!("l2 {:?} {}", rd, imm);
-        todo!();
+        println!("lw {:?} {}", rd, imm);
+        let addr = self.read_reg(rd).wrapping_add(imm);
+        let res: u32 = self.mem.read(VirtAddr(addr as usize))?;
+        self.write_reg(rd, res as i32 as i64 as u64);
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
@@ -408,21 +417,30 @@ impl RV64GCUser<()> for CoreEmu {
     fn lbu(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("lbu {:?} {}", rd, imm);
-        todo!();
+        let addr = self.read_reg(rd).wrapping_add(imm);
+        let res: u8 = self.mem.read(VirtAddr(addr as usize))?;
+        self.write_reg(rd, res as u64);
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
     fn lhu(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("lhu {:?} {}", rd, imm);
-        todo!();
+        let addr = self.read_reg(rd).wrapping_add(imm);
+        let res: u16 = self.mem.read(VirtAddr(addr as usize))?;
+        self.write_reg(rd, res as u64);
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
     fn lwu(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("lwu {:?} {}", rd, imm);
-        todo!();
+        let addr = self.read_reg(rd).wrapping_add(imm);
+        let res: u32 = self.mem.read(VirtAddr(addr as usize))?;
+        self.write_reg(rd, res as u64);
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
@@ -438,21 +456,27 @@ impl RV64GCUser<()> for CoreEmu {
     fn sh(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("sh {:?} {:?} {}", rs1, rs2, imm);
-        todo!();
+        let addr = VirtAddr(self.read_reg(rs1).wrapping_add(imm as u64) as _);
+        self.mem.write(addr, self.read_reg(rs2) as u16)?;
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
     fn sw(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("sw {:?} {:?} {}", rs1, rs2, imm);
-        todo!();
+        let addr = VirtAddr(self.read_reg(rs1).wrapping_add(imm as u64) as _);
+        self.mem.write(addr, self.read_reg(rs2) as u32)?;
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
     fn sd(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("sd {:?} {:?} {}", rs1, rs2, imm);
-        todo!();
+        let addr = VirtAddr(self.read_reg(rs1).wrapping_add(imm as u64) as _);
+        self.mem.write(addr, self.read_reg(rs2))?;
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
@@ -481,42 +505,66 @@ impl RV64GCUser<()> for CoreEmu {
     fn beq(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("beq {:?} {:?} {}", rs1, rs2, imm);
-        todo!();
+        if self.read_reg(rs1) == self.read_reg(rs2) {
+            self.pc = self.pc.wrapping_add_signed(imm as i64);
+        } else {
+            self.pc += 4;
+        }
         Ok(())
     }
     #[inline(always)]
     fn bne(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("bne {:?} {:?} {}", rs1, rs2, imm);
-        todo!();
+        if self.read_reg(rs1) != self.read_reg(rs2) {
+            self.pc = self.pc.wrapping_add_signed(imm as i64);
+        } else {
+            self.pc += 4;
+        }
         Ok(())
     }
     #[inline(always)]
     fn blt(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("blt {:?} {:?} {}", rs1, rs2, imm);
-        todo!();
+        if (self.read_reg(rs1) as i64) < (self.read_reg(rs2) as i64) {
+            self.pc = self.pc.wrapping_add_signed(imm as i64);
+        } else {
+            self.pc += 4;
+        }
         Ok(())
     }
     #[inline(always)]
     fn bge(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("bge {:?} {:?} {}", rs1, rs2, imm);
-        todo!();
+        if (self.read_reg(rs1) as i64) > (self.read_reg(rs2) as i64) {
+            self.pc = self.pc.wrapping_add_signed(imm as i64);
+        } else {
+            self.pc += 4;
+        }
         Ok(())
     }
     #[inline(always)]
     fn bltu(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("bltu {:?} {:?} {}", rs1, rs2, imm);
-        todo!();
+        if self.read_reg(rs1) < self.read_reg(rs2) {
+            self.pc = self.pc.wrapping_add_signed(imm as i64);
+        } else {
+            self.pc += 4;
+        }
         Ok(())
     }
     #[inline(always)]
     fn bgeu(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("bgeu {:?} {:?} {}", rs1, rs2, imm);
-        todo!();
+        if self.read_reg(rs1) > self.read_reg(rs2) {
+            self.pc = self.pc.wrapping_add_signed(imm as i64);
+        } else {
+            self.pc += 4;
+        }
         Ok(())
     }
     #[inline(always)]
@@ -1489,24 +1537,34 @@ impl RV64GCUser<()> for CoreEmu {
         Ok(())
     }
     #[inline(always)]
-    fn c_beqz(&mut self, rs1: Register, offset: u16) -> Result<(), Self::Error> {
+    fn c_beqz(&mut self, rs1: Register, offset: i16) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("c_beqz {:?} {}", rs1, offset);
-        todo!();
+        if self.read_reg(rs1) == 0 {
+            self.pc = self.pc.wrapping_add_signed(offset as i64);
+        } else {
+            self.pc += 2;
+        }
         Ok(())
     }
     #[inline(always)]
-    fn c_bnez(&mut self, rs1: Register, offset: u16) -> Result<(), Self::Error> {
+    fn c_bnez(&mut self, rs1: Register, offset: i16) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("c_bnez {:?} {}", rs1, offset);
-        todo!();
+        if self.read_reg(rs1) != 0 {
+            self.pc = self.pc.wrapping_add_signed(offset as i64);
+        } else {
+            self.pc += 2;
+        }
         Ok(())
     }
     #[inline(always)]
     fn c_slli(&mut self, rd: Register, uimm: u8) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("c_slli {:?} {}", rd, uimm);
-        todo!();
+        let res = self.read_reg(rd).overflow_shl(uimm as u64);
+        self.write_reg(rd, res);
+        self.pc += 2;
         Ok(())
     }
     #[inline(always)]

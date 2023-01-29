@@ -1537,7 +1537,7 @@ pub trait RV64GCUser<T> {
     /// `if (x[8+rs1'] == 0) pc += sext(offset)`
     /// Translated:
     /// `if (x[rs1] == 0) pc += sext(offset)`
-    fn c_beqz(&mut self, rs1: Register, offset: u16) -> Result<T, Self::Error>;
+    fn c_beqz(&mut self, rs1: Register, offset: i16) -> Result<T, Self::Error>;
 
     /// # Compact Jump (RV64C)
     /// 
@@ -1546,7 +1546,7 @@ pub trait RV64GCUser<T> {
     /// `if (x[8+rs1'] != 0) pc += sext(offset)`
     /// Translated:
     /// `if (x[rs1] != 0) pc += sext(offset)`
-    fn c_bnez(&mut self, rs1: Register, offset: u16) -> Result<T, Self::Error>;
+    fn c_bnez(&mut self, rs1: Register, offset: i16) -> Result<T, Self::Error>;
 
     /// # Compact Shift Left Logical Immediate (RV32C)
     /// 
