@@ -14,6 +14,9 @@ fn main() {
         _ => panic!(),
     };
 
+    println!("{:#4?}", elf.);
+    panic!();
+
     assert_eq!(elf.header.e_machine, EM_RISCV);
     // if it's relocatable add an offset so we don't map in the 0x0 page
     // so we catch null derefs
@@ -48,7 +51,7 @@ fn main() {
         if segment.p_type == PT_LOAD {
             println!("{:x?} {:?}", segment.vm_range(), perms);
             let (idx, seg) = mmu.allocate_segment(
-                VirtAddr(vaddr_offset + segment.vm_range().start),
+                Some(VirtAddr(vaddr_offset + segment.vm_range().start)),
                 segment.vm_range().len(), 
                 perms
             ).unwrap();
@@ -77,14 +80,14 @@ fn main() {
     let prog_name_addr = VirtAddr(stack_base_addr.0 + 0x1000);
 
     let (_, prog_name_seg) = mmu.allocate_segment(
-        prog_name_addr,
+        Some(prog_name_addr),
         0x100, 
         PermField::ReadAfterWrite | PermField::Write,
     ).unwrap();
     unsafe{prog_name_seg.write_from_slice(VirtAddr(0), prog_name).unwrap()};
 
     let (stack_idx, stack) = mmu.allocate_segment(
-        stack_top_addr,
+        Some(stack_top_addr),
         stack_size + 8, 
         PermField::ReadAfterWrite | PermField::Write,
     ).unwrap();

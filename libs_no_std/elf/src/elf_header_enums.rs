@@ -425,6 +425,10 @@ impl_enum!(
 	EM_TI_C2000 => 141,
 	/// The Texas Instruments TMS320C55x DSP family
 	EM_TI_C5500 => 142,
+	/// Texas Instruments App. Specific RISC
+	EM_TI_ARP32 => 143,
+	/// Texas Instruments Prog. Realtime Unit
+	EM_TI_PRU => 144,
 	/// STMicroelectronics 64bit VLIW Data Signal Processor
 	EM_MMDSP_PLUS => 160,
 	/// Cypress M8C microprocessor
@@ -544,6 +548,14 @@ impl_enum!(
 	EM_NORC => 218,
 	/// CSR Kalimba architecture family
 	EM_CSR_KALIMBA => 219,
+	/// Zilog Z80
+	EM_Z80 => 220,
+	/// Controls and Data Services VISIUMcore
+	EM_VISIUM => 221,
+	/// FTDI Chip FT32
+	EM_FT32 => 222,
+	/// Moxie processor
+	EM_MOXIE => 223,
 	/// AMD GPU architecture
 	EM_AMDGPU => 224,
 	/// RISC-V

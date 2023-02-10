@@ -11,6 +11,9 @@ pub use regs::*;
 mod types;
 pub use types::*;
 
+mod ass;
+pub use ass::*;
+
 mod user;
 pub use user::*;
 

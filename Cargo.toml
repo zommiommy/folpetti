@@ -6,7 +6,7 @@ members = [
     "libs_no_std/core_requirements",
     "libs_no_std/diss",
     "libs_no_std/efi",
-#    "libs_no_std/elf",
+    "libs_no_std/elf",
     "libs_no_std/emu",
     "libs_no_std/evil",
     "libs_no_std/ld",

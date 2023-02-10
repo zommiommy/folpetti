@@ -53,7 +53,7 @@ extern fn efi_main(image_handle: EfiHandle, system_table: *mut EfiSystemTable) {
     }    
 
     println!("==================================================================");
-    println!(" Pee Pee Poo Poo OS");
+    println!(" FolpettOS");
     println!("==================================================================");
     
     let (memory_map, key) = st.get_memory_map_and_key();
@@ -109,5 +109,5 @@ extern fn efi_main(image_handle: EfiHandle, system_table: *mut EfiSystemTable) {
         efi::unregister_system_table();
     }
 
-    panic!("CULO");
+    panic!("OHAYOOO");
 }

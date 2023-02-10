@@ -94,6 +94,13 @@ impl From<u32> for Register {
         }
     }
 }
+
+impl From<Register> for u32 {
+    fn from(value: Register) -> Self {
+        value as u32
+    }
+}
+
 /// 64-bit RISC-V float registers
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(usize)]
