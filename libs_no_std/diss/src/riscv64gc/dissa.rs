@@ -278,6 +278,7 @@ fn diss_riscv64gc_2b_q2_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 funct4,
                 rd_rs1,
                 rs2,
+                ..
             } = CRtype::from(inst);
             let rd = Register::from(rd_rs1 as u32);
             let imm = (funct4 & 1) << 5 | (
@@ -292,6 +293,7 @@ fn diss_riscv64gc_2b_q2_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 funct4,
                 rd_rs1,
                 rs2,
+                ..
             } = CRtype::from(inst);
 
             if (funct4 & 1) == 0 {
@@ -345,20 +347,20 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
 
     match opcode {
         0b0110111 => {
-            let Utype{imm, rd} = Utype::from(inst);
+            let Utype{imm, rd, ..} = Utype::from(inst);
             user.lui(rd.into(), imm << 12)
         }
         0b0010111 => {
-            let Utype{imm, rd} = Utype::from(inst);
+            let Utype{imm, rd, ..} = Utype::from(inst);
             user.auipc(rd.into(), imm)
         }
         0b1101111 => {
-            let Jtype{imm, rd} = Jtype::from(inst);
+            let Jtype{imm, rd, ..} = Jtype::from(inst);
             user.jal(rd.into(), imm)
         }
         0b1100111 => {
             let Itype{
-                imm, rs1, funct3, rd,
+                imm, rs1, funct3, rd, ..
             } = Itype::from(inst);
             match funct3 {
                 0b000 => {
@@ -369,7 +371,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         }
         0b1100011 => {
             let Btype {
-                imm, rs2, rs1, funct3,
+                imm, rs2, rs1, funct3, ..
             } = Btype::from(inst);
             match funct3 {
                 0b000 => user.beq( rs1.into(), rs2.into(), imm),
@@ -383,7 +385,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         }
         0b0000111 => {
             let Itype{
-                imm, rs1, funct3, rd,
+                imm, rs1, funct3, rd, ..
             } = Itype::from(inst);
 
             todo!();
@@ -397,7 +399,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         }
         0b0100111 => {
             let Stype {
-                imm, rs2, rs1, funct3,
+                imm, rs2, rs1, funct3, ..
             } = Stype::from(inst);
 
             todo!();
@@ -412,6 +414,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         0b1000011 => {
             let R4type {
                 funct2, rs3, rs2, rs1, funct3, rd,
+                ..
             } = R4type::from(inst);
             match funct2 {
                 00 => user.fmadd_s(
@@ -428,6 +431,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         0b1000111 => {
             let R4type {
                 funct2, rs3, rs2, rs1, funct3, rd,
+                ..
             } = R4type::from(inst);
             match funct2 {
                 00 => user.fmsub_s(
@@ -444,6 +448,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         0b1001011 => {
             let R4type {
                 funct2, rs3, rs2, rs1, funct3, rd,
+                ..
             } = R4type::from(inst);
             match funct2 {
                 00 => user.fnmsub_s(
@@ -460,6 +465,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         0b1001111 => {
             let R4type {
                 funct2, rs3, rs2, rs1, funct3, rd,
+                ..
             } = R4type::from(inst);
             match funct2 {
                 00 => user.fnmadd_s(
@@ -476,6 +482,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         0b1010011 => {
             let Rtype{
                 funct7, rs2, rs1, funct3, rd,
+                ..
             } = Rtype::from(inst);
             match funct7 {
                 _ => todo!(),
@@ -747,7 +754,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         }
         0b0000011 => {
             let Itype{
-                imm, rs1, funct3, rd,
+                imm, rs1, funct3, rd, ..
             } = Itype::from(inst);
 
             match funct3 {
@@ -763,7 +770,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         }
         0b0100011 => {
             let Stype {
-                imm, rs2, rs1, funct3,
+                imm, rs2, rs1, funct3, ..
             } = Stype::from(inst);
 
             match funct3 {
@@ -776,7 +783,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         }
         0b0010011 => {
             let Itype{
-                imm, rs1, funct3, rd,
+                imm, rs1, funct3, rd, ..
             } = Itype::from(inst);
 
             match funct3 {
@@ -813,7 +820,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         }
         0b0110011 => {
             let Rtype{
-                funct7, rs2, rs1, funct3, rd,
+                funct7, rs2, rs1, funct3, rd, ..
             } = Rtype::from(inst);
 
             match (funct7, funct3) {
@@ -840,7 +847,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         }
         0b0111011 => {
             let Rtype{
-                funct7, rs2, rs1, funct3, rd,
+                funct7, rs2, rs1, funct3, rd, ..
             } = Rtype::from(inst);
 
             match (funct7, funct3) {
@@ -859,7 +866,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         }
         0b0001111 => {
             let Itype{
-                imm, rs1, funct3, rd,
+                imm, rs1, funct3, rd, ..
             } = Itype::from(inst);
 
             match funct3 {
@@ -870,7 +877,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         }
         0b1110011 => {
             let Itype{
-                imm, rs1, funct3, rd,
+                imm, rs1, funct3, rd, ..
             } = Itype::from(inst);
 
             todo!();
@@ -896,7 +903,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
         }
         0b0011011 => {
             let Itype{
-                imm, rs1, funct3, rd,
+                imm, rs1, funct3, rd, ..
             } = Itype::from(inst);
 
             match funct3 {
