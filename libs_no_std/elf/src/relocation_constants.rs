@@ -1,11 +1,22 @@
 //! Conversion of llvm/usr/include/llvm/BinaryFormat/ElfRelocs/*.def
+//! and llvm/include/llvm/ExecutionEngine/JITLink/riscv.h
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(u32)]
 pub enum RELOC_RISCV {
     R_RISCV_NONE = 0,
+    /// A plain 32-bit pointer value relocation
+    ///
+    /// Fixup expression:
+    ///   Fixup <= Target + Addend : uint32
+    ///
     R_RISCV_32 = 1,
+    /// A plain 64-bit pointer value relocation
+    ///
+    /// Fixup expression:
+    ///   Fixup <- Target + Addend : uint32
+    ///
     R_RISCV_64 = 2,
     R_RISCV_RELATIVE = 3,
     R_RISCV_COPY = 4,
@@ -16,30 +27,104 @@ pub enum RELOC_RISCV {
     R_RISCV_TLS_DTPREL64 = 9,
     R_RISCV_TLS_TPREL32 = 10,
     R_RISCV_TLS_TPREL64 = 11,
+    /// PC-relative branch pointer value relocation
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target - Fixup + Addend)
+    ///
     R_RISCV_BRANCH = 16,
+    /// High 20 bits of PC-relative jump pointer value relocation
+    ///
+    /// Fixup expression:
+    ///   Fixup <- Target - Fixup + Addend
+    ///
     R_RISCV_JAL = 17,
+    /// PC relative call
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target - Fixup + Addend)
     R_RISCV_CALL = 18,
+    /// PC relative call by PLT
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target - Fixup + Addend)
     R_RISCV_CALL_PLT = 19,
+    /// PC relative GOT offset
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (GOT - Fixup + Addend) >> 12
     R_RISCV_GOT_HI20 = 20,
     R_RISCV_TLS_GOT_HI20 = 21,
     R_RISCV_TLS_GD_HI20 = 22,
+    /// High 20 bits of PC relative relocation
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target - Fixup + Addend + 0x800) >> 12
     R_RISCV_PCREL_HI20 = 23,
+    /// Low 12 bits of PC relative relocation, used by I type instruction format
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target - Fixup + Addend) & 0xFFF
     R_RISCV_PCREL_LO12_I = 24,
+    /// Low 12 bits of PC relative relocation, used by S type instruction format
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target - Fixup + Addend) & 0xFFF
     R_RISCV_PCREL_LO12_S = 25,
+    /// High 20 bits of 32-bit pointer value relocation
+    ///
+    /// Fixup expression
+    ///   Fixup <- (Target + Addend + 0x800) >> 12
     R_RISCV_HI20 = 26,
+    /// Low 12 bits of 32-bit pointer value relocation
+    ///
+    /// Fixup expression
+    ///   Fixup <- (Target + Addend) & 0xFFF
     R_RISCV_LO12_I = 27,
     R_RISCV_LO12_S = 28,
     R_RISCV_TPREL_HI20 = 29,
     R_RISCV_TPREL_LO12_I = 30,
     R_RISCV_TPREL_LO12_S = 31,
     R_RISCV_TPREL_ADD = 32,
+    /// 8 bits label addition
+    ///
+    /// Fixup expression
+    ///   Fixup <- (Target - *{1}Fixup + Addend)
     R_RISCV_ADD8 = 33,
+    /// 16 bits label addition
+    ///
+    /// Fixup expression
+    ///   Fixup <- (Target - *{2}Fixup + Addend)
     R_RISCV_ADD16 = 34,
+    /// 32 bits label addition
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target - *{4}Fixup + Addend)
     R_RISCV_ADD32 = 35,
+    /// 64 bits label addition
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target - *{8}Fixup + Addend)
     R_RISCV_ADD64 = 36,
+    /// 8 bits label subtraction
+    ///
+    /// Fixup expression
+    ///   Fixup <- (Target - *{1}Fixup - Addend)
     R_RISCV_SUB8 = 37,
+    /// 16 bits label subtraction
+    ///
+    /// Fixup expression
+    ///   Fixup <- (Target - *{2}Fixup - Addend)
     R_RISCV_SUB16 = 38,
-    R_RISCV_SUB32 = 39,
+    /// 32 bits label subtraction
+    ///
+    /// Fixup expression
+    ///   Fixup <- (Target - *{4}Fixup - Addend)
+    R_RISCV_SUB32 = 39,  
+    /// 64 bits label subtraction
+    ///
+    /// Fixup expression
+    ///   Fixup <- (Target - *{8}Fixup - Addend)
     R_RISCV_SUB64 = 40,
     R_RISCV_GNU_VTINHERIT = 41,
     R_RISCV_GNU_VTENTRY = 42,
@@ -48,11 +133,35 @@ pub enum RELOC_RISCV {
     R_RISCV_RVC_JUMP = 45,
     R_RISCV_RVC_LUI = 46,
     R_RISCV_RELAX = 51,
+    /// 6 bits label subtraction
+    ///
+    /// Fixup expression
+    ///   Fixup <- (Target - *{1}Fixup - Addend)
     R_RISCV_SUB6 = 52,
+    /// Local label assignment
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target + Addend)
     R_RISCV_SET6 = 53,
+    /// Local label assignment
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target + Addend)
     R_RISCV_SET8 = 54,
+    /// Local label assignment
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target + Addend)
     R_RISCV_SET16 = 55,
+    /// Local label assignment
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target + Addend)
     R_RISCV_SET32 = 56,
+    /// 32 bits PC relative relocation
+    ///
+    /// Fixup expression:
+    ///   Fixup <- (Target - Fixup + Addend)
     R_RISCV_32_PCREL = 57,
     R_RISCV_IRELATIVE = 58,
 }

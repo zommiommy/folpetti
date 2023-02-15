@@ -17,8 +17,8 @@ pub use ass::*;
 mod user;
 pub use user::*;
 
-mod diss;
-pub use diss::*;
+mod dissa;
+pub use dissa::*;
 
 #[cfg(feature="std")]
 mod print;

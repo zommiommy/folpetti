@@ -22,6 +22,7 @@ impl RV64GCUser<u32> for AssemblerRV64GC {
     #[inline]
     fn addi(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<u32, Self::Error> {
         todo!();
+        // here
         Ok(4)
     }
     #[inline]
@@ -57,6 +58,7 @@ impl RV64GCUser<u32> for AssemblerRV64GC {
     #[inline]
     fn srli(&mut self, rd: Register, rs1: Register, shamt: i32) -> Result<u32, Self::Error> {
         todo!();
+        // here
         Ok(4)
     }
     #[inline]
@@ -72,6 +74,7 @@ impl RV64GCUser<u32> for AssemblerRV64GC {
     #[inline]
     fn sub(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<u32, Self::Error> {
         todo!();
+        // here
         Ok(4)
     }
     #[inline]
@@ -157,11 +160,13 @@ impl RV64GCUser<u32> for AssemblerRV64GC {
     #[inline]
     fn lw(&mut self, rd: Register, imm: u64) -> Result<u32, Self::Error> {
         todo!();
+        // here
         Ok(4)
     }
     #[inline]
     fn ld(&mut self, rd: Register, imm: u64) -> Result<u32, Self::Error> {
         todo!();
+        // here
         Ok(4)
     }
     #[inline]
@@ -207,6 +212,7 @@ impl RV64GCUser<u32> for AssemblerRV64GC {
     #[inline]
     fn jalr(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<u32, Self::Error> {
         todo!();
+        // here
         Ok(4)
     }
     #[inline]

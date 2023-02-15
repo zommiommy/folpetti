@@ -14,7 +14,7 @@ fn main() {
         _ => panic!(),
     };
 
-    println!("{:#4?}", elf.);
+    println!("{:#4?}", elf.dynamic);
     panic!();
 
     assert_eq!(elf.header.e_machine, EM_RISCV);

@@ -26,7 +26,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
     match inst.extract_bitfield(13, 16) {
         0b000 => {
             let CIWtype{
-                imm, rd_prime
+                imm, rd_prime, ..
             } = CIWtype::from(inst);
             if imm == 0 {
                 panic!("Illegal instruction");
@@ -40,7 +40,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b001 => {
             let CLtype {
-                imm2, rs1_prime, imm1, rd_prime,
+                imm2, rs1_prime, imm1, rd_prime, ..
             } = CLtype::from(inst);
             user.c_fld(
                 Register::from_prime(rd_prime),
@@ -50,7 +50,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b010 => {
             let CLtype {
-                imm2, rs1_prime, imm1, rd_prime,
+                imm2, rs1_prime, imm1, rd_prime, ..
             } = CLtype::from(inst);
             user.c_lw(
                 Register::from_prime(rd_prime),
@@ -60,7 +60,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b011 => {
             let CLtype {
-                imm2, rs1_prime, imm1, rd_prime,
+                imm2, rs1_prime, imm1, rd_prime, ..
             } = CLtype::from(inst);
             user.c_ld(
                 Register::from_prime(rd_prime),
@@ -71,7 +71,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         0b100 => unimplemented!("Reserved Compact Instruction"),
         0b101 => {
             let CStype {
-                imm2, rs1_prime, imm1, rs2_prime,
+                imm2, rs1_prime, imm1, rs2_prime, ..
             } = CStype::from(inst);
             user.c_fsd(
                 Register::from_prime(rs1_prime),
@@ -81,7 +81,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b110 => {
             let CStype {
-                imm2, rs1_prime, imm1, rs2_prime,
+                imm2, rs1_prime, imm1, rs2_prime, ..
             } = CStype::from(inst);
             user.c_sw(
                 Register::from_prime(rs1_prime),
@@ -91,7 +91,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b111 => {
             let CStype {
-                imm2, rs1_prime, imm1, rs2_prime,
+                imm2, rs1_prime, imm1, rs2_prime, ..
             } = CStype::from(inst);
             user.c_sd(
                 Register::from_prime(rs1_prime),
@@ -111,6 +111,7 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 imm2,
                 rd_rs1,
                 imm1,
+                ..
             } = CItype::from(inst);
 
             if rd_rs1 == 0 {
@@ -130,6 +131,7 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 imm2,
                 rd_rs1,
                 imm1,
+                ..
             } = CItype::from(inst);
             let rd = Register::from(rd_rs1 as u32);
             let imm = if imm2 == 0 {
@@ -144,6 +146,7 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 imm2,
                 rd_rs1,
                 imm1,
+                ..
             } = CItype::from(inst);
             let rd = Register::from(rd_rs1 as u32);
             let imm = if imm2 == 0 {
@@ -158,6 +161,7 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 imm2,
                 rd_rs1,
                 imm1,
+                ..
             } = CItype::from(inst);
             let rd = Register::from(rd_rs1 as u32);
             let imm = if imm2 == 0 {
@@ -180,6 +184,7 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 offset2,
                 rs1_prime,
                 offset1,
+                ..
             } = CBtype::from(inst);
             let rd = Register::from_prime(rs1_prime);
             match offset2 & 0b111 {
@@ -212,7 +217,7 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
         }
         0b101 => {
             let CJtype{
-                jump_target,
+                jump_target, ..
             } = CJtype::from(inst);
             user.c_j(jump_target)
         }
@@ -221,6 +226,7 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 offset2,
                 rs1_prime,
                 offset1,
+                ..
             } = CBtype::from(inst);
             let rs1 = Register::from_prime(rs1_prime);
 
@@ -237,6 +243,7 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 offset2,
                 rs1_prime,
                 offset1,
+                ..
             } = CBtype::from(inst);
             let rs1 = Register::from_prime(rs1_prime);
 
@@ -260,6 +267,7 @@ fn diss_riscv64gc_2b_q2_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 imm2,
                 rd_rs1,
                 imm1,
+                ..
             } = CItype::from(inst);
             let rd = Register::from(rd_rs1 as u32);
             let shamt = ((imm2 & 1) << 5) | imm1;
@@ -316,6 +324,7 @@ fn diss_riscv64gc_2b_q2_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
             let CSStype{
                 imm,
                 rs2,
+                ..
             } = CSStype::from(inst);
             let rs2 = Register::from(rs2 as u32);
 
