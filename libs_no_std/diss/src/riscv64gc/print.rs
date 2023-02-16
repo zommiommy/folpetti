@@ -5,7 +5,7 @@ use super::RV64GCUser;
 
 pub struct RV64GCPrint;
 
-impl RV64GCUser<usize> for RV64GCPrint {
+impl RV64GCUser<usize, usize> for RV64GCPrint {
     type Error = Infallible;
     fn lui(&mut self, rd: Register, imm: u32) -> Result<usize, Self::Error> {
         println!("lui {:?} {}", rd, imm);

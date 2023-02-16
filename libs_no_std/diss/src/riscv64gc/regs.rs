@@ -69,6 +69,20 @@ pub enum Register {
 }
 
 impl Register {
+    pub(crate) fn into_prime(&self) -> u16 {
+        match self {
+            Register::S0 => 0b000,
+            Register::S1 => 0b001,
+            Register::A0 => 0b010,
+            Register::A1 => 0b011,
+            Register::A2 => 0b100,
+            Register::A3 => 0b101,
+            Register::A4 => 0b110,
+            Register::A5 => 0b111,
+            _ => panic!("Unsupported prime reg")
+        }
+    } 
+
     pub(crate) fn from_prime(val: u16) -> Register {
         match val {
             0b000 => Register::S0,

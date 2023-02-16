@@ -758,13 +758,13 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
             } = Itype::from(inst);
 
             match funct3 {
-                0b000 => user.lb( rd.into(), imm as i64 as u64),
-                0b001 => user.lh( rd.into(), imm as i64 as u64),
-                0b010 => user.lw( rd.into(), imm as i64 as u64),
-                0b011 => user.ld( rd.into(), imm as i64 as u64),
-                0b100 => user.lbu(rd.into(), imm as i64 as u64),
-                0b101 => user.lhu(rd.into(), imm as i64 as u64),
-                0b110 => user.lwu(rd.into(), imm as i64 as u64),
+                0b000 => user.lb( rd.into(), rs1.into(), imm),
+                0b001 => user.lh( rd.into(), rs1.into(), imm),
+                0b010 => user.lw( rd.into(), rs1.into(), imm),
+                0b011 => user.ld( rd.into(), rs1.into(), imm),
+                0b100 => user.lbu(rd.into(), rs1.into(), imm),
+                0b101 => user.lhu(rd.into(), rs1.into(), imm),
+                0b110 => user.lwu(rd.into(), rs1.into(), imm),
                 _ => unimplemented!("Unexpected 0b0000011"),
             }
         }
@@ -774,10 +774,10 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
             } = Stype::from(inst);
 
             match funct3 {
-                0b000 => user.sb(rs1.into(), rs2.into(), imm as i64 as u64),
-                0b001 => user.sh(rs1.into(), rs2.into(), imm as i64 as u64),
-                0b010 => user.sw(rs1.into(), rs2.into(), imm as i64 as u64),
-                0b011 => user.sd(rs1.into(), rs2.into(), imm as i64 as u64),
+                0b000 => user.sb(rs1.into(), rs2.into(), imm),
+                0b001 => user.sh(rs1.into(), rs2.into(), imm),
+                0b010 => user.sw(rs1.into(), rs2.into(), imm),
+                0b011 => user.sd(rs1.into(), rs2.into(), imm),
                 _ => unimplemented!("Unexpected 0b0100011"),
             }
         }
@@ -790,8 +790,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
                 0b000 => user.addi( rd.into(), rs1.into(), imm),
                 0b010 => user.slti( rd.into(), rs1.into(), imm),
                 0b011 => {
-                    let uimm = inst.extract_bitfield(20, 32);
-                    user.sltiu(rd.into(), rs1.into(), uimm)
+                    user.sltiu(rd.into(), rs1.into(), imm as u32)
                 },
                 0b100 => user.xori( rd.into(), rs1.into(), imm),
                 0b110 => user.ori(  rd.into(), rs1.into(), imm),
@@ -907,7 +906,7 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
             } = Itype::from(inst);
 
             match funct3 {
-                0b000 => user.addiw(rd.into(), rs1.into(), imm as u32),
+                0b000 => user.addiw(rd.into(), rs1.into(), imm),
                 0b001 => {
                     let mode = (imm >> 5) & 0b1111111;
                     let shamt = imm & 0b11111;

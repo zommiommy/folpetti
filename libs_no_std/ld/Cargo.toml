@@ -9,3 +9,4 @@ edition = "2021"
 diss = {path="../diss"}
 mmu = {path="../mmu"}
 elf = {path="../elf"}
+goblin = "0.5.4"

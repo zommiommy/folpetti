@@ -282,7 +282,7 @@ pub trait RV64GCUser<T> {
     /// before storing it in register rd.
     /// 
     /// `x[rd] = sext(M[x[rs1] + sext(offset)][7:0])`
-    fn lb(&mut self, rd: Register, imm: u64) -> Result<T, Self::Error>;
+    fn lb(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<T, Self::Error>;
 
     /// # Load Half word (RV32I)
     /// 
@@ -290,7 +290,7 @@ pub trait RV64GCUser<T> {
     /// before storing it in register rd.
     /// 
     /// `x[rd] = sext(M[x[rs1] + sext(offset)][15:0])`
-    fn lh(&mut self, rd: Register, imm: u64) -> Result<T, Self::Error>;
+    fn lh(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<T, Self::Error>;
 
     /// # Load Word (RV32I)
     /// 
@@ -298,14 +298,14 @@ pub trait RV64GCUser<T> {
     /// before storing it in register rd.
     /// 
     /// `x[rd] = sext(M[x[rs1] + sext(offset)][31:0])`
-    fn lw(&mut self, rd: Register, imm: u64) -> Result<T, Self::Error>;
+    fn lw(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<T, Self::Error>;
 
     /// # Load Double word (RV64I)
     /// 
     /// Loads a 64-bit value from memory into register rd for RV64I.
     /// 
     /// `x[rd] = M[x[rs1] + sext(offset)][63:0]`
-    fn ld(&mut self, rd: Register, imm: u64) -> Result<T, Self::Error>;
+    fn ld(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<T, Self::Error>;
 
     /// # Load Byte Unsigned (RV32I)
     /// 
@@ -313,7 +313,7 @@ pub trait RV64GCUser<T> {
     /// before storing it in register rd.
     /// 
     /// `x[rd] = M[x[rs1] + sext(offset)][7:0]`
-    fn lbu(&mut self, rd: Register, imm: u64) -> Result<T, Self::Error>;
+    fn lbu(&mut self, rd: Register, rs1: Register,  imm: i32) -> Result<T, Self::Error>;
 
     /// # Load Half word Unsigned (RV32I)
     /// 
@@ -321,7 +321,7 @@ pub trait RV64GCUser<T> {
     /// before storing it in register rd.
     /// 
     /// `x[rd] = M[x[rs1] + sext(offset)][15:0]`
-    fn lhu(&mut self, rd: Register, imm: u64) -> Result<T, Self::Error>;
+    fn lhu(&mut self, rd: Register, rs1: Register,  imm: i32) -> Result<T, Self::Error>;
 
     /// # Load Word Unsigned (RV64I)
     /// 
@@ -329,14 +329,14 @@ pub trait RV64GCUser<T> {
     /// storing it in register rd.
     /// 
     /// `x[rd] = M[x[rs1] + sext(offset)][31:0]`
-    fn lwu(&mut self, rd: Register, imm: u64) -> Result<T, Self::Error>;
+    fn lwu(&mut self, rd: Register, rs1: Register,  imm: i32) -> Result<T, Self::Error>;
 
     /// # Store Byte (RV32I)
     /// 
     /// Store 8-bit, values from the low bits of register rs2 to memory.
     /// 
     /// `M[x[rs1] + sext(offset)] = x[rs2][7:0]`
-    fn sb(&mut self, rs1: Register, rs2: Register, imm: u64) 
+    fn sb(&mut self, rs1: Register, rs2: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Store Half word (RV32I)
@@ -344,7 +344,7 @@ pub trait RV64GCUser<T> {
     /// Store 16-bit, values from the low bits of register rs2 to memory.
     /// 
     /// `M[x[rs1] + sext(offset)] = x[rs2][15:0]`
-    fn sh(&mut self, rs1: Register, rs2: Register, imm: u64) 
+    fn sh(&mut self, rs1: Register, rs2: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Store Half word (RV32I)
@@ -352,7 +352,7 @@ pub trait RV64GCUser<T> {
     /// Store 32-bit, values from the low bits of register rs2 to memory.
     /// 
     /// `M[x[rs1] + sext(offset)] = x[rs2][31:0]`
-    fn sw(&mut self, rs1: Register, rs2: Register, imm: u64) 
+    fn sw(&mut self, rs1: Register, rs2: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Store Double word (RV64I)
@@ -360,7 +360,7 @@ pub trait RV64GCUser<T> {
     /// Store 64-bit, values from register rs2 to memory.
     /// 
     /// `M[x[rs1] + sext(offset)] = x[rs2][63:0]`
-    fn sd(&mut self, rs1: Register, rs2: Register, imm: u64) 
+    fn sd(&mut self, rs1: Register, rs2: Register, imm: i32) 
         -> Result<T, Self::Error>;
 
     /// # Jump and link(RV32I)
@@ -439,7 +439,7 @@ pub trait RV64GCUser<T> {
     /// register rs1 into register rd (assembler pseudoinstruction SEXT.W).
     /// 
     /// `x[rd] = sext((x[rs1] + sext(immediate))[31:0])`
-    fn addiw(&mut self, rd: Register, rs1: Register, imm: u32) 
+    fn addiw(&mut self, rd: Register, rs1: Register, imm: i32) 
         -> Result<T, Self::Error>;
         
     /// # Shift Left Logical Immediate Word (RV64I)

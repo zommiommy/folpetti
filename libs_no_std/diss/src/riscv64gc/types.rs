@@ -1,8 +1,5 @@
 use traits::*;
 
-extern crate std;
-use std::println;
-
 /// An R-type instruction
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -546,9 +543,6 @@ pub(crate) fn compose_imms_53_2_or_6(imm1: u16, imm2: u16) -> u16 {
 
 #[cfg(test)]
 mod tests {
-    extern crate std;
-    use std::println;
-
     use super::*;
     #[test]
     fn test_rtype() {

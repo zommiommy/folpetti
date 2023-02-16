@@ -374,107 +374,107 @@ impl RV64GCUser<()> for CoreEmu {
         Ok(())
     }
     #[inline(always)]
-    fn lb(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+    fn lb(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
-        println!("lb {:?} {}", rd, imm);
-        let addr = self.read_reg(rd).wrapping_add(imm);
+        println!("lb {:?} [{:?}+{}]", rd, rs1, imm);
+        let addr = self.read_reg(rs1).wrapping_add_signed(imm as i64);
         let res: u8= self.mem.read(VirtAddr(addr as usize))?;
         self.write_reg(rd, res as i8 as i64 as u64);
         self.pc += 4;
         Ok(())
     }
     #[inline(always)]
-    fn lh(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+    fn lh(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
-        println!("lh {:?} {}", rd, imm);
-        let addr = self.read_reg(rd).wrapping_add(imm);
+        println!("lh {:?} [{:?}+{}]", rd, rs1, imm);
+        let addr = self.read_reg(rs1).wrapping_add_signed(imm as i64);
         let res: u16 = self.mem.read(VirtAddr(addr as usize))?;
         self.write_reg(rd, res as i16 as i64 as u64);
         self.pc += 4;
         Ok(())
     }
     #[inline(always)]
-    fn lw(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+    fn lw(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
-        println!("lw {:?} {}", rd, imm);
-        let addr = self.read_reg(rd).wrapping_add(imm);
+        println!("lw {:?} [{:?}+{}]", rd, rs1, imm);
+        let addr = self.read_reg(rs1).wrapping_add_signed(imm as i64);
         let res: u32 = self.mem.read(VirtAddr(addr as usize))?;
         self.write_reg(rd, res as i32 as i64 as u64);
         self.pc += 4;
         Ok(())
     }
     #[inline(always)]
-    fn ld(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+    fn ld(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
-        println!("ld {:?} {}", rd, imm);
-        let addr = self.read_reg(rd).wrapping_add(imm);
+        println!("ld {:?} [{:?}+{}]", rd, rs1, imm);
+        let addr = self.read_reg(rs1).wrapping_add_signed(imm as i64);
         let res = self.mem.read(VirtAddr(addr as usize))?;
         self.write_reg(rd, res);
         self.pc += 4;
         Ok(())
     }
     #[inline(always)]
-    fn lbu(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+    fn lbu(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
-        println!("lbu {:?} {}", rd, imm);
-        let addr = self.read_reg(rd).wrapping_add(imm);
+        println!("lbu {:?} [{:?}+{}]", rd, rs1, imm);
+        let addr = self.read_reg(rs1).wrapping_add_signed(imm as i64);
         let res: u8 = self.mem.read(VirtAddr(addr as usize))?;
         self.write_reg(rd, res as u64);
         self.pc += 4;
         Ok(())
     }
     #[inline(always)]
-    fn lhu(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+    fn lhu(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
-        println!("lhu {:?} {}", rd, imm);
-        let addr = self.read_reg(rd).wrapping_add(imm);
+        println!("lhu {:?} [{:?}+{}]", rd, rs1, imm);
+        let addr = self.read_reg(rs1).wrapping_add_signed(imm as i64);
         let res: u16 = self.mem.read(VirtAddr(addr as usize))?;
         self.write_reg(rd, res as u64);
         self.pc += 4;
         Ok(())
     }
     #[inline(always)]
-    fn lwu(&mut self, rd: Register, imm: u64) -> Result<(), Self::Error> {
+    fn lwu(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
-        println!("lwu {:?} {}", rd, imm);
-        let addr = self.read_reg(rd).wrapping_add(imm);
+        println!("lwu {:?} [{:?}+{}]", rd, rs1, imm);
+        let addr = self.read_reg(rs1).wrapping_add_signed(imm as i64);
         let res: u32 = self.mem.read(VirtAddr(addr as usize))?;
         self.write_reg(rd, res as u64);
         self.pc += 4;
         Ok(())
     }
     #[inline(always)]
-    fn sb(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<(), Self::Error> {
+    fn sb(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("sb {:?} {:?} {}", rs1, rs2, imm);
-        let addr = VirtAddr(self.read_reg(rs1).wrapping_add(imm as u64) as _);
+        let addr = VirtAddr(self.read_reg(rs1).wrapping_add_signed(imm as i64) as _);
         self.mem.write(addr, self.read_reg(rs2) as u8)?;
         self.pc += 4;
         Ok(())
     }
     #[inline(always)]
-    fn sh(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<(), Self::Error> {
+    fn sh(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("sh {:?} {:?} {}", rs1, rs2, imm);
-        let addr = VirtAddr(self.read_reg(rs1).wrapping_add(imm as u64) as _);
+        let addr = VirtAddr(self.read_reg(rs1).wrapping_add_signed(imm as i64) as _);
         self.mem.write(addr, self.read_reg(rs2) as u16)?;
         self.pc += 4;
         Ok(())
     }
     #[inline(always)]
-    fn sw(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<(), Self::Error> {
+    fn sw(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("sw {:?} {:?} {}", rs1, rs2, imm);
-        let addr = VirtAddr(self.read_reg(rs1).wrapping_add(imm as u64) as _);
+        let addr = VirtAddr(self.read_reg(rs1).wrapping_add_signed(imm as i64) as _);
         self.mem.write(addr, self.read_reg(rs2) as u32)?;
         self.pc += 4;
         Ok(())
     }
     #[inline(always)]
-    fn sd(&mut self, rs1: Register, rs2: Register, imm: u64) -> Result<(), Self::Error> {
+    fn sd(&mut self, rs1: Register, rs2: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("sd {:?} {:?} {}", rs1, rs2, imm);
-        let addr = VirtAddr(self.read_reg(rs1).wrapping_add(imm as u64) as _);
+        let addr = VirtAddr(self.read_reg(rs1).wrapping_add_signed(imm as i64) as _);
         self.mem.write(addr, self.read_reg(rs2))?;
         self.pc += 4;
         Ok(())
@@ -568,7 +568,7 @@ impl RV64GCUser<()> for CoreEmu {
         Ok(())
     }
     #[inline(always)]
-    fn addiw(&mut self, rd: Register, rs1: Register, imm: u32) -> Result<(), Self::Error> {
+    fn addiw(&mut self, rd: Register, rs1: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("addiw {:?} {:?} {}", rd, rs1, imm);
         self.write_reg(rd, 
@@ -1600,8 +1600,13 @@ impl RV64GCUser<()> for CoreEmu {
     }
     #[inline(always)]
     fn c_jr(&mut self, rs1: Register) -> Result<(), Self::Error> {
-        #[cfg(feature="dbg_prints")]
-        println!("c_jr {:?}", rs1);
+        #[cfg(feature="dbg_prints")]{
+            if rs1 == Register::Ra {
+                println!("ret");
+            } else {
+                println!("c_jr {:?}", rs1);
+            }
+        }
         self.pc = self.read_reg(rs1);
         Ok(())
     }
