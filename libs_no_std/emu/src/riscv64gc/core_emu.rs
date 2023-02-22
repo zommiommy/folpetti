@@ -1,6 +1,6 @@
 use core::intrinsics::unlikely;
 use diss::riscv64gc::*;
-use mmu::{Mmu, VirtAddr, MmuError};
+use mmu::{Mmu, VirtAddr, MmuError, PermField};
 use traits::{Word, Number};
 
 #[derive(Debug)]
@@ -30,6 +30,7 @@ pub struct CoreEmu {
 //  pub fcsr: u64,
     pub pc: u64,
     pub mem: Mmu,
+    pub instructions_executed: usize,
 }
 
 impl CoreEmu {
@@ -39,65 +40,66 @@ impl CoreEmu {
             fregs: [0.0; 32],
             pc: 0,
             mem,
+            instructions_executed: 0,
         }
     }
 
     #[cfg(feature="std")]
     pub fn debug(&self) {
-        println!("PC: {:016x} Zero: {:016x}", 
+        println!("PC: {:>16x} Zero: {:>16x}", 
             self.pc, 
             self.read_reg(Register::Zero),
         );
         println!(
-            "Ra: {:016x} Sp: {:016x} Gp : {:016x} Tp : {:016x}", 
+            "Ra: {:>16x} Sp: {:>16x} Gp : {:>16x} Tp : {:>16x}", 
             self.read_reg(Register::Ra),
             self.read_reg(Register::Sp),
             self.read_reg(Register::Gp),
             self.read_reg(Register::Tp),
         );
         println!(
-            "T0: {:016x} T1: {:016x} T2 : {:016x} T3 : {:016x}", 
+            "T0: {:>16x} T1: {:>16x} T2 : {:>16x} T3 : {:>16x}", 
             self.read_reg(Register::T0),
             self.read_reg(Register::T1),
             self.read_reg(Register::T2),
             self.read_reg(Register::T3),
         );
         println!(
-            "T4: {:016x} T5: {:016x} T6 : {:016x}", 
+            "T4: {:>16x} T5: {:>16x} T6 : {:>16x}", 
             self.read_reg(Register::T4),
             self.read_reg(Register::T5),
             self.read_reg(Register::T6),
         );
         println!(
-            "A0: {:016x} A1: {:016x} A2 : {:016x} A3 : {:016x}", 
+            "A0: {:>16x} A1: {:>16x} A2 : {:>16x} A3 : {:>16x}", 
             self.read_reg(Register::A0),
             self.read_reg(Register::A1),
             self.read_reg(Register::A2),
             self.read_reg(Register::A3),
         );
         println!(
-            "A4: {:016x} A5: {:016x} A6 : {:016x} A7 : {:016x}", 
+            "A4: {:>16x} A5: {:>16x} A6 : {:>16x} A7 : {:>16x}", 
             self.read_reg(Register::A4),
             self.read_reg(Register::A5),
             self.read_reg(Register::A6),
             self.read_reg(Register::A7),
         );
         println!(
-            "S0: {:016x} S1: {:016x} S2 : {:016x} S3 : {:016x}", 
+            "S0: {:>16x} S1: {:>16x} S2 : {:>16x} S3 : {:>16x}", 
             self.read_reg(Register::S0),
             self.read_reg(Register::S1),
             self.read_reg(Register::S2),
             self.read_reg(Register::S3),
         );
         println!(
-            "S4: {:016x} S5: {:016x} S6 : {:016x} S7 : {:016x}", 
+            "S4: {:>16x} S5: {:>16x} S6 : {:>16x} S7 : {:>16x}", 
             self.read_reg(Register::S4),
             self.read_reg(Register::S5),
             self.read_reg(Register::S6),
             self.read_reg(Register::S7),
         );
         println!(
-            "S8: {:016x} S9: {:016x} S10: {:016x} S11: {:016x}", 
+            "S8: {:>16x} S9: {:>16x} S10: {:>16x} S11: {:>16x}", 
             self.read_reg(Register::S8),
             self.read_reg(Register::S9),
             self.read_reg(Register::S10),
@@ -136,6 +138,7 @@ impl CoreEmu {
             fregs: self.fregs,
             pc: self.pc,
             mem: self.mem.fork(),
+            instructions_executed: self.instructions_executed,
         }
     }
 
@@ -160,12 +163,25 @@ impl CoreEmu {
             let inst: u32 = inst.unwrap();
             #[cfg(feature="dbg_prints")]
             {
-                println!("\n{:016x} {:02x?}", self.pc, &inst.to_le_bytes());
+                println!("\n{:016x} {:02x?} {}", self.pc, &inst.to_le_bytes(), self.instructions_executed);
                 self.debug();
             }
+            self.instructions_executed += 1;
             if let Err(e) = diss_riscv64gc(self, inst) {
                 return e;
             }
+        }
+    }
+
+    #[cfg(feature="std")]
+    pub fn print_stack(&mut self) {
+        let sp = self.read_reg(Register::Sp) as usize;
+        let (stack_start, stack) = self.mem.resolve_segment(VirtAddr(sp)).unwrap();
+        for addr in (sp..stack_start.0 + stack.len() - 8).step_by(16) {
+            println!("{:016x}: {:016x} {:016x}", addr, 
+                unsafe{self.mem.read_with_perm::<u64>(VirtAddr(addr), PermField::None.into()).unwrap()},
+                unsafe{self.mem.read_with_perm::<u64>(VirtAddr(addr)+8, PermField::None.into()).unwrap()},
+            );
         }
     }
 }
@@ -176,14 +192,16 @@ impl RV64GCUser<()> for CoreEmu {
     fn lui(&mut self, rd: Register, imm: u32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("lui {:?} {}", rd, imm);
-        todo!();
+        self.write_reg(rd, imm as i32 as i64 as u64);
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
     fn auipc(&mut self, rd: Register, imm: u32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("auipc {:?} {}", rd, imm);
-        self.write_reg(rd, self.pc.wrapping_add_signed(imm as i64));
+        let imm = imm << 12;
+        self.write_reg(rd, self.pc.wrapping_add_signed(imm as i32 as i64));
         self.pc += 4;
         Ok(())
     }
@@ -1369,7 +1387,8 @@ impl RV64GCUser<()> for CoreEmu {
     fn c_ld(&mut self, rd: Register, rs1: Register, uimm: u16) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("c_ld {:?} {:?} {}", rd, rs1, uimm);
-        let addr = self.read_reg(rs1).wrapping_add(uimm as u64);
+        // check
+        let addr = self.read_reg(rs1).wrapping_add(8 * uimm as u64);
         let res = self.mem.read(VirtAddr(addr as usize))?;
         self.write_reg(rd, res);
         self.pc += 2;
@@ -1405,7 +1424,9 @@ impl RV64GCUser<()> for CoreEmu {
     fn c_sd(&mut self, rs1: Register, rs2: Register, uimm: u16) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("c_sd {:?} {:?} {}", rs1, rs2, uimm);
-        todo!();
+        let addr = self.read_reg(rs1).wrapping_add(8 * uimm as u64);
+        self.mem.write(VirtAddr(addr as _), self.read_reg(rs2));
+        self.pc += 2;
         Ok(())
     }
     #[inline(always)]
@@ -1447,7 +1468,7 @@ impl RV64GCUser<()> for CoreEmu {
         Ok(())
     }
     #[inline(always)]
-    fn c_addi16sp(&mut self, imm: i8) -> Result<(), Self::Error> {
+    fn c_addi16sp(&mut self, imm: i16) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("c_addi16sp {}", imm);
         let value = self.read_reg(Register::Sp).wrapping_add_signed(imm as i64);
@@ -1456,10 +1477,12 @@ impl RV64GCUser<()> for CoreEmu {
         Ok(())
     }
     #[inline(always)]
-    fn c_lui(&mut self, rd: Register, imm: i8) -> Result<(), Self::Error> {
+    fn c_lui(&mut self, rd: Register, imm: i32) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("c_lui {:?} {}", rd, imm);
-        todo!();
+        let value = self.read_reg(Register::Sp).wrapping_add_signed(imm as i64);
+        self.write_reg(Register::Sp, value);
+        self.pc += 2;
         Ok(())
     }
     #[inline(always)]
@@ -1533,7 +1556,7 @@ impl RV64GCUser<()> for CoreEmu {
     fn c_j(&mut self, imm: i16) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("c_j {}", imm);
-        todo!();
+        self.pc = self.pc.wrapping_add_signed(imm as i64);
         Ok(())
     }
     #[inline(always)]

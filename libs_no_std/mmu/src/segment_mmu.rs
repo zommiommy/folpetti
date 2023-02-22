@@ -174,6 +174,12 @@ impl<
         Ok(())
     }
 
+    pub unsafe fn write_from_slice_with_perm(&mut self, address: VirtAddr, slice: &[u8], perm: Perm) -> Result<(), MmuError> {
+        self.memory[address.0..address.0 + slice.len()].copy_from_slice(slice);
+        self.permissions[address.0..address.0 + slice.len()].fill(perm);
+        Ok(())
+    }
+
     /// Read a value from memory at address `address` with native endianess
     /// using custom permissions (mainly used for reading the code to disassemble 
     /// with execution perms)

@@ -1061,12 +1061,12 @@ impl AssemblerRV64GC {
         }.into())
     }
     #[inline]
-    pub fn c_addi16sp(&mut self, imm: i8) -> Result<u16, &str> {
+    pub fn c_addi16sp(&mut self, imm: i16) -> Result<u16, &str> {
         todo!();
         Ok(2)
     }
     #[inline]
-    pub fn c_lui(&mut self, rd: Register, imm: i8) -> Result<u16, &str> {
+    pub fn c_lui(&mut self, rd: Register, imm: i32) -> Result<u16, &str> {
         todo!();
         Ok(2)
     }

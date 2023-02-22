@@ -1418,14 +1418,14 @@ pub trait RV64GCUser<T> {
     /// 16 in the range (-512,496).
     /// 
     /// `x[2] = x[2] + sext(imm)`
-    fn c_addi16sp(&mut self, imm: i8) -> Result<T, Self::Error>;
+    fn c_addi16sp(&mut self, imm: i16) -> Result<T, Self::Error>;
 
     /// # Compact Load Unsigned Immediate (RV32C)
     /// 
     /// ?
     /// 
     /// `x[rd] = sext(imm[17:12] << 12)`
-    fn c_lui(&mut self, rd: Register, imm: i8) -> Result<T, Self::Error>;
+    fn c_lui(&mut self, rd: Register, imm: i32) -> Result<T, Self::Error>;
 
     /// # Compact Shift Right Logical Immediate (RV32C)
     /// 

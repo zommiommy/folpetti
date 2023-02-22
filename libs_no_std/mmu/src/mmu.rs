@@ -11,7 +11,7 @@ pub struct Mmu<
     const TAINT: bool = true,    
 >  {
     pub segments: alloc::vec::Vec<(VirtAddr, SegmentMmu<DIRTY_BLOCK_SIZE, RAW, TAINT>)>,
-    pub data_segment_idx: usize,
+    pub brk_idx: usize,
     pub stack_segment_idx: usize,
     pub segments_alloc_addr: VirtAddr,
     pub segment_redzone: usize,
@@ -29,7 +29,7 @@ impl<
     pub fn new() -> Self {
         Self { 
             segments: alloc::vec::Vec::with_capacity(10), 
-            data_segment_idx: 0, 
+            brk_idx: 0, 
             stack_segment_idx: 0,
             segments_alloc_addr: VirtAddr(0x0000004000000000),
             segment_redzone: 0x1000,
@@ -37,7 +37,7 @@ impl<
     }
 
     #[inline]
-    fn resolve_segment(&mut self, addr: VirtAddr) -> Result<&mut (VirtAddr, SegmentMmu<DIRTY_BLOCK_SIZE, RAW, TAINT>), MmuError> {
+    pub fn resolve_segment(&mut self, addr: VirtAddr) -> Result<&mut (VirtAddr, SegmentMmu<DIRTY_BLOCK_SIZE, RAW, TAINT>), MmuError> {
         self.segments.iter_mut().find(|(start_addr, smmu)| {
             (start_addr.0..start_addr.0 + smmu.len()).contains(&addr.0)
         }).ok_or_else(|| {
@@ -48,6 +48,12 @@ impl<
     #[inline]
     pub fn len(&self) -> usize {
         self.segments.iter().map(|(_addr, smmu)| smmu.len()).sum()
+    }
+
+    pub fn vmmap(&self) {
+        for (virtaddr, segment) in self.segments.iter() {
+            println!("{:016x}-{:016x} - 0x{:06x} - {:?}", virtaddr.0, virtaddr.0 + segment.len() - 8, segment.len(), segment.permissions[0]);
+        }
     }
 
     /// check validity on allocate overlapping
@@ -63,7 +69,7 @@ impl<
             .collect::<alloc::vec::Vec<_>>();
         Self {
             segments: forked_segments,
-            data_segment_idx: self.data_segment_idx,
+            brk_idx: self.brk_idx,
             stack_segment_idx: self.stack_segment_idx,
             segments_alloc_addr: self.segments_alloc_addr,
             segment_redzone: self.segment_redzone,
@@ -85,7 +91,18 @@ impl<
         let (base_addr, segment_mmu) = self.resolve_segment(address)?;
         segment_mmu.read_with_perm(VirtAddr(address.0 - base_addr.0), perm)
     }
+    
+    pub unsafe fn write_from_slice(&mut self, address: VirtAddr, slice: &[u8]) -> Result<(), MmuError> 
+    {
+        let (base_addr, segment_mmu) = self.resolve_segment(address)?;
+        segment_mmu.write_from_slice(VirtAddr(address.0 - base_addr.0), slice)
+    }
 
+    pub unsafe fn write_from_slice_with_perm(&mut self, address: VirtAddr, slice: &[u8], perm: Perm) -> Result<(), MmuError> 
+    {
+        let (base_addr, segment_mmu) = self.resolve_segment(address)?;
+        segment_mmu.write_from_slice_with_perm(VirtAddr(address.0 - base_addr.0), slice, perm)
+    }
 
     /// Read a value from memory at address `address` with native endianess
     pub fn read<T>(&mut self, address: VirtAddr) -> Result<T, MmuError> 
@@ -95,7 +112,22 @@ impl<
     {   
 
         let (base_addr, segment_mmu) = self.resolve_segment(address)?;
-        segment_mmu.read(VirtAddr(address.0 - base_addr.0))
+        segment_mmu.read(VirtAddr(address.0 - base_addr.0)).map_err(|e| match e {
+            MmuError::PermissionsFault { 
+                is_read, 
+                permissions, 
+                size,
+                ..
+            } => {
+                MmuError::PermissionsFault { 
+                    is_read, 
+                    virtual_address: address, 
+                    permissions, 
+                    size
+                } 
+            }
+            e => e,  
+        })
     }
 
     /// Write a value `value` to memory at address `address` with native endianess
@@ -105,7 +137,22 @@ impl<
         SegmentMmu<DIRTY_BLOCK_SIZE, RAW, TAINT>: MmuReadWrite<T>,
     {
         let (base_addr, segment_mmu) = self.resolve_segment(address)?;
-        segment_mmu.write(VirtAddr(address.0 - base_addr.0), value)
+        segment_mmu.write(VirtAddr(address.0 - base_addr.0), value).map_err(|e| match e {
+            MmuError::PermissionsFault { 
+                is_read, 
+                permissions, 
+                size,
+                ..
+            } => {
+                MmuError::PermissionsFault { 
+                    is_read, 
+                    virtual_address: address, 
+                    permissions, 
+                    size
+                } 
+            }
+            e => e,  
+        })
     }
 }
 
@@ -149,7 +196,7 @@ impl<
     ///  addr, when that value is reasonable, the system has enough
     ///  memory, and the process does not exceed its maximum data size
     pub fn brk(&mut self, addr: VirtAddr) -> Result<(), MmuError> {
-        let (data_addr, data_seg) = &mut self.segments[self.data_segment_idx];
+        let (data_addr, data_seg) = &mut self.segments[self.brk_idx];
         let segment_length = addr.0 - data_addr.0;
         data_seg.resize(segment_length, PermField::Write | PermField::ReadAfterWrite)?;
         Ok(())
@@ -159,7 +206,7 @@ impl<
     /// Calling sbrk() with an increment of 0 can be used to find the
     /// current location of the program break.
     pub fn sbrk(&mut self, increment: isize) -> Result<VirtAddr, MmuError> {
-        let (data_addr, data_seg) = &mut self.segments[self.data_segment_idx];
+        let (data_addr, data_seg) = &mut self.segments[self.brk_idx];
         let new_length = data_seg.len().checked_add_signed(increment).unwrap();
         data_seg.resize(new_length, PermField::Write | PermField::ReadAfterWrite)?;
         Ok(VirtAddr(data_addr.0 + new_length))

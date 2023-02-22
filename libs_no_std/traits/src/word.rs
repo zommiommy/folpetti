@@ -316,6 +316,14 @@ pub trait Word: Number + Broadcast<u8> {
     /// Computes the absolute difference between self and other.
     fn abs_diff(self, rhs: Self) -> Self;
 
+    /// Return the closest non-smaller value which is a multiple of align.
+    /// align HAVE TO be a power of 2
+    fn align_to_ceil(self, align: Self) -> Self;
+
+    /// Return the closest non-bigger value which is a multiple of align.
+    /// align HAVE TO be a power of 2
+    fn align_to_floor(self, align: Self) -> Self;
+    
     /// Logical shift left `self` by `rhs`, returing the result.
     /// Overshifting by larget rhan [`Self::BITS`] will result in zero.
     fn overflow_shl(self, rhs: Self) -> Self;
@@ -626,6 +634,18 @@ impl Word for $ty {
     #[inline(always)]
     fn from_mut_slice(this: &mut [Self]) -> &mut [Self::Atomic]{
         <$aty>::from_mut_slice(this)
+    }
+
+    #[inline(always)]
+    fn align_to_ceil(self, align: Self) -> Self {
+        debug_assert!(align.is_power_of_two());
+        (self + align - 1) & !(align -1)
+    }
+
+    #[inline(always)]
+    fn align_to_floor(self, align: Self) -> Self {
+        debug_assert!(align.is_power_of_two());
+        (self - 1) & !(align -1)
     }
 
     #[inline(always)]

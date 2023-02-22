@@ -638,7 +638,7 @@ mod tests {
     fn test_citype() {
         let v = CItype {
             rd_rs1: 2,
-            imm1: 8,
+            imm1: 31,
             imm2: 1,
             funct3: 6,
             opcode: 0b11,

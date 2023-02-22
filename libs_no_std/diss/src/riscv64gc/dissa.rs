@@ -32,9 +32,10 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 panic!("Illegal instruction");
             }
             let nzuimm = (
-                ((imm & 0b1) << 3) 
-                | ((imm & 0b11100) << 6) 
-                | ((imm & 0b1100000) >> 1)
+                (imm.extract_bitfield(0, 1) << 3) 
+                | (imm.extract_bitfield(1, 2) << 2)
+                | (imm.extract_bitfield(2, 6) << 6) 
+                | (imm.extract_bitfield(6, 8) << 4) 
             ).zero_extend(9);
             user.c_addi4spn(Register::from_prime(rd_prime), nzuimm)
         }
@@ -96,7 +97,7 @@ fn diss_riscv64gc_2b_q0_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
             user.c_sd(
                 Register::from_prime(rs1_prime),
                 Register::from_prime(rs2_prime),
-                compose_imms_53_2_or_6(imm1, imm2),
+                compose_imms_53_76(imm1, imm2),
             )
         }
         _ => unreachable!(),
@@ -149,12 +150,7 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 ..
             } = CItype::from(inst);
             let rd = Register::from(rd_rs1 as u32);
-            let imm = if imm2 == 0 {
-                imm1 as i8
-            } else {
-                -(imm1 as i8)
-            };
-            user.c_li(rd, imm)
+            user.c_li(rd, (imm1 | (imm2 << 5)).sign_extend(5) as i8)
         }
         0b011 => {
             let CItype{
@@ -164,18 +160,19 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
                 ..
             } = CItype::from(inst);
             let rd = Register::from(rd_rs1 as u32);
-            let imm = if imm2 == 0 {
-                imm1 as i8
-            } else {
-                -(imm1 as i8)
-            };
             match rd_rs1 {
                 0 => unimplemented!(),
                 2 => {
-                    user.c_addi16sp(imm)
+                    let imm = (imm2.extract_bitfield(0, 1) << 9) 
+                        | (imm1.extract_bitfield(0, 1) << 5)
+                        | (imm1.extract_bitfield(1, 3) << 7)
+                        | (imm1.extract_bitfield(3, 4) << 6)
+                        | (imm1.extract_bitfield(4, 5) << 4);
+                    user.c_addi16sp(imm.sign_extend(9) as i16)
                 }
                 _ => {
-                    user.c_lui(rd, imm)
+                    let imm = ((imm2 as u32) << 17) | ((imm1 as u32) << 12);
+                    user.c_lui(rd, imm.sign_extend(17) as i32)
                 }
             }
         }
@@ -230,11 +227,13 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
             } = CBtype::from(inst);
             let rs1 = Register::from_prime(rs1_prime);
 
-            let offset = ((offset1 & 0b1) << 5) 
-                | (offset1 & 0b110) 
-                | ((offset1 & 0b11000) << 3)
-                | ((offset2 & 0b11) << 3)
-                | ((offset2 & 0b100) << 5);
+            let offset = 
+                (offset1.extract_bitfield(0, 1) << 5) 
+                | (offset1.extract_bitfield(1, 3) << 1) 
+                | (offset1.extract_bitfield(3, 7) << 6)
+                | (offset2.extract_bitfield(0, 2) << 3)
+                | (offset2.extract_bitfield(2, 3) << 8)
+            ;
 
             user.c_beqz(rs1, offset.sign_extend(9) as i16)
         }
@@ -247,11 +246,13 @@ fn diss_riscv64gc_2b_q1_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u16)
             } = CBtype::from(inst);
             let rs1 = Register::from_prime(rs1_prime);
 
-            let offset = ((offset1 & 0b1) << 5) 
-                | (offset1 & 0b110) 
-                | ((offset1 & 0b11000) << 3)
-                | ((offset2 & 0b11) << 3)
-                | ((offset2 & 0b100) << 5);
+            let offset = 
+                (offset1.extract_bitfield(0, 1) << 5) 
+                | (offset1.extract_bitfield(1, 3) << 1) 
+                | (offset1.extract_bitfield(3, 7) << 6)
+                | (offset2.extract_bitfield(0, 2) << 3)
+                | (offset2.extract_bitfield(2, 3) << 8)
+            ;
 
             user.c_bnez(rs1, offset.sign_extend(9) as i16)
         }

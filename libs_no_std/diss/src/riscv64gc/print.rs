@@ -722,12 +722,12 @@ impl RV64GCUser<usize, usize> for RV64GCPrint {
         Ok(2)
     }
     
-    fn c_addi16sp(&mut self, imm: i8) -> Result<usize, Self::Error> {
+    fn c_addi16sp(&mut self, imm: i16) -> Result<usize, Self::Error> {
         println!("c_addi16sp {}", imm);
         Ok(2)
     }
     
-    fn c_lui(&mut self, rd: Register, imm: i8) -> Result<usize, Self::Error> {
+    fn c_lui(&mut self, rd: Register, imm: i32) -> Result<usize, Self::Error> {
         println!("c_lui {:?} {}", rd, imm);
         Ok(2)
     }
