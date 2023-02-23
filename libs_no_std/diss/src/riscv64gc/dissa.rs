@@ -880,8 +880,6 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
                 imm, rs1, funct3, rd, ..
             } = Itype::from(inst);
 
-            todo!();
-            /*
             match funct3 {
                 0b000 => {
                     if inst == 0b00000000000000000000000001110011 {
@@ -892,13 +890,14 @@ fn diss_riscv64gc_4b_inst<T, User: RV64GCUser<T>>(user: &mut User, inst: u32)
                         unreachable!();
                     }
                 }
-                0b001 => user.csrrw( rd.into(), rs1.into(), imm),
-                0b010 => user.csrrs( rd.into(), rs1.into(), imm),
-                0b011 => user.csrrc( rd.into(), rs1.into(), imm),
-                0b101 => user.csrrwi(rd.into(), rs1.into(), imm),
-                0b110 => user.csrrsi(rd.into(), rs1.into(), imm),
-                0b111 => user.csrrci(rd.into(), rs1.into(), imm),
-            }*/
+                _ => todo!(),
+                //0b001 => user.csrrw( rd.into(), rs1.into(), imm),
+                //0b010 => user.csrrs( rd.into(), rs1.into(), imm),
+                //0b011 => user.csrrc( rd.into(), rs1.into(), imm),
+                //0b101 => user.csrrwi(rd.into(), rs1.into(), imm),
+                //0b110 => user.csrrsi(rd.into(), rs1.into(), imm),
+                //0b111 => user.csrrci(rd.into(), rs1.into(), imm),
+            }
 
         }
         0b0011011 => {

@@ -684,7 +684,7 @@ impl RV64GCUser<()> for CoreEmu {
     fn div(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("div {:?} {:?} {:?}", rd, rs1, rs2);
-        self.write_reg(rd, self.read_reg(rs1).wrapping_div(self.read_reg(rs2)));
+        self.write_reg(rd, (self.read_reg(rs1) as i64).wrapping_div(self.read_reg(rs2) as i64) as u64);
         self.pc += 4;
         Ok(())
     }
@@ -692,21 +692,24 @@ impl RV64GCUser<()> for CoreEmu {
     fn divu(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("divu {:?} {:?} {:?}", rd, rs1, rs2);
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1).wrapping_div(self.read_reg(rs2)));
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
     fn rem(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("rem {:?} {:?} {:?}", rd, rs1, rs2);
-        self.write_reg(rd, self.read_reg(rs1).wrapping_rem(self.read_reg(rs2)));
+        self.write_reg(rd, (self.read_reg(rs1) as i64).wrapping_rem(self.read_reg(rs2) as i64) as u64);
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
     fn remu(&mut self, rd: Register, rs1: Register, rs2: Register) -> Result<(), Self::Error> {
         #[cfg(feature="dbg_prints")]
         println!("remu {:?} {:?} {:?}", rd, rs1, rs2);
-        todo!();
+        self.write_reg(rd, self.read_reg(rs1).wrapping_rem(self.read_reg(rs2)));
+        self.pc += 4;
         Ok(())
     }
     #[inline(always)]
@@ -1481,7 +1484,7 @@ impl RV64GCUser<()> for CoreEmu {
         #[cfg(feature="dbg_prints")]
         println!("c_lui {:?} {}", rd, imm);
         let value = self.read_reg(Register::Sp).wrapping_add_signed(imm as i64);
-        self.write_reg(Register::Sp, value);
+        self.write_reg(rd, value);
         self.pc += 2;
         Ok(())
     }

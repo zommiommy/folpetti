@@ -514,9 +514,20 @@ pub(crate) struct CJtype {
 impl From<u16> for CJtype {
     #[inline]
     fn from(inst: u16) -> Self {
+        let imm = inst.extract_bitfield( 2, 13);
+        let jump_target = 
+            (imm.extract_bitfield(0, 1) << 5) |
+            (imm.extract_bitfield(1, 4) << 1) |
+            (imm.extract_bitfield(4, 5) << 7) |
+            (imm.extract_bitfield(5, 6) << 6) |
+            (imm.extract_bitfield(6, 7) << 10) |
+            (imm.extract_bitfield(7, 9) << 8) |
+            (imm.extract_bitfield(10, 11) << 4) |
+            (imm.extract_bitfield(11, 12) << 11)
+        ;
         CJtype {
             funct3:      inst.extract_bitfield(13, 16),
-            jump_target: inst.extract_bitfield( 2, 13).sign_extend(10).to_signed(),
+            jump_target: jump_target.sign_extend(11) as i16,
             opcode:    inst.extract_bitfield( 0,  2),
         }
     }
@@ -525,7 +536,17 @@ impl From<u16> for CJtype {
 impl From<CJtype> for u16 {
     #[inline]
     fn from(value: CJtype) -> Self {
-        let jmp = (value.jump_target as u16).extract_bitfield(0, 11);
+        let jmp = (value.jump_target as u16).extract_bitfield(1, 13);
+        let jmp = 
+            (jmp.extract_bitfield(5, 6)) | 
+            (jmp.extract_bitfield(1, 4) << 1) | 
+            (jmp.extract_bitfield(7, 8) << 4) | 
+            (jmp.extract_bitfield(6, 7) << 5) | 
+            (jmp.extract_bitfield(10, 11) << 6) | 
+            (jmp.extract_bitfield(8, 10) << 7) | 
+            (jmp.extract_bitfield(4, 5) << 9) | 
+            (jmp.extract_bitfield(11, 12) << 10) 
+        ;
         value.opcode | (jmp << 2) | (value.funct3 << 13)
     }
 }

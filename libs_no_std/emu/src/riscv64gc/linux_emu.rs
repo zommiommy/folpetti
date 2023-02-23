@@ -42,7 +42,7 @@ impl LinuxEmu {
                 CoreEmuError::Yield => {},
                 CoreEmuError::Syscall => {
                     // https://github.com/riscv-collab/riscv-gnu-toolchain/blob/master/linux-headers/include/asm-generic/unistd.h#L183
-                    let syscall_number = self.core.read_reg(Register::A0);
+                    let syscall_number = self.core.read_reg(Register::A7);
                     let syscall_variant = syscall_number.try_into();
                     // TODO!: make this cleaner
                     if syscall_variant.is_err() {
@@ -54,7 +54,7 @@ impl LinuxEmu {
                     println!("syscall {:?}", syscall_variant);
                     match syscall_variant {
                         LinuxSyscall::exit => {
-                            return LinuxEmuError::Exit(self.core.read_reg(Register::A1));
+                            return LinuxEmuError::Exit(self.core.read_reg(Register::A0));
                         }
                         LinuxSyscall::read => {
                             let fd = self.core.read_reg(Register::A1);
